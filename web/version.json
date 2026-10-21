@@ -1,5 +1,5 @@
 {
-  "appVersion": "2.2.4",
-  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.2.4/KelontongPOS-v2.2.4.apk",
-  "notes": "Fix script mati (operator ?? tidak didukung) — badge Online normal"
+  "appVersion": "2.2.5",
+  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.2.5/KelontongPOS-v2.2.5.apk",
+  "notes": "Simpan Database Raw: tampilkan pesan error asli jika gagal"
 }

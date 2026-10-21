@@ -500,10 +500,12 @@
                 if(!rowIsEmpty) matrix.push(rowData);
             });
 
-            showToast("Menyimpan ke Google Sheets...", "info");
+            showToast("Menyimpan perubahan...", "info");
             google.script.run.withSuccessHandler(res => {
                 showToast("Database berhasil diperbarui!", "success");
                 loadProductsData();
+            }).withFailureHandler(err => {
+                showToast("GAGAL simpan: " + (err && err.message ? err.message : err), "warning");
             }).saveRawSheetData(sheetName, matrix);
         }
 
