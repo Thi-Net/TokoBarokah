@@ -1,5 +1,5 @@
 {
-  "appVersion": "2.2",
-  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.2/KelontongPOS-v2.2.apk",
-  "notes": "Jam WIB, jam live, kamera belakang scanner, notifikasi update"
+  "appVersion": "2.2.1",
+  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.2.1/KelontongPOS-v2.2.1.apk",
+  "notes": "Bugfix tab omzet harian"
 }
