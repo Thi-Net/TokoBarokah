@@ -4,6 +4,12 @@
 -- (bug: penjualan 10:50 WIB tercatat jam 03:50 di omzet harian)
 -- ============================================================
 
+drop function if exists get_filtered_financial_report(text, date);
+drop function if exists get_filtered_financial_report(text);
+drop function if exists get_dashboard_summary();
+drop function if exists get_daily_omzet_data(date);
+drop function if exists get_stock_ledger_data(date);
+
 -- ---------- get_dashboard_summary ----------
 create or replace function get_dashboard_summary()
 returns json
@@ -85,7 +91,7 @@ begin
     'datetime', to_char(s.created_at at time zone 'Asia/Jakarta', 'YYYY-MM-DD HH24:MI:SS'),
     'product', p.name,
     'unit', s.unit_name,
-    'qty', s.qty_base_total,
+    'qty', s.qty_base,
     'total', s.total_sale,
     'profit', s.gross_profit
   ) order by s.created_at), '[]'::json)
@@ -128,17 +134,20 @@ begin
       'netProfit', coalesce((select sum(gross_profit) from sales where (created_at at time zone 'Asia/Jakarta')::date between v_start and v_end), 0)
                  - coalesce((select sum(amount) from expenses where (created_at at time zone 'Asia/Jakarta')::date between v_start and v_end), 0)
     ),
-    'rawSales', coalesce((select json_agg(json_build_array(
-        s.id, to_char(s.created_at at time zone 'Asia/Jakarta', 'YYYY-MM-DD HH24:MI:SS'), p.name, s.unit_name, s.qty_base_total, s.selling_price_snapshot, s.total_sale, s.total_hpp, s.gross_profit)
-        order by s.created_at), '[]'::json) from sales s left join products p on p.id = s.product_id
+    'rawSales', (select coalesce(json_agg(json_build_array(
+        s.id, to_char(s.created_at at time zone 'Asia/Jakarta', 'YYYY-MM-DD HH24:MI:SS'), p.name, s.unit_name, s.qty_base, s.price_snapshot, s.total_sale, s.total_hpp, s.gross_profit)
+        order by s.created_at), '[]'::json)
+      from sales s left join products p on p.id = s.product_id
       where (s.created_at at time zone 'Asia/Jakarta')::date between v_start and v_end),
-    'rawPurchases', coalesce((select json_agg(json_build_array(
-        pu.id, to_char(pu.created_at at time zone 'Asia/Jakarta', 'YYYY-MM-DD HH24:MI:SS'), pu.supplier, pu.invoice_number, pr.name, pu.unit_name, pu.qty_input, pu.total_price)
-        order by pu.created_at), '[]'::json) from purchases pu left join products pr on pr.id = pu.product_id
+    'rawPurchases', (select coalesce(json_agg(json_build_array(
+        pu.id, to_char(pu.created_at at time zone 'Asia/Jakarta', 'YYYY-MM-DD HH24:MI:SS'), pu.supplier, pu.invoice, pr.name, pu.unit_name, pu.qty, pu.total_price)
+        order by pu.created_at), '[]'::json)
+      from purchases pu left join products pr on pr.id = pu.product_id
       where (pu.created_at at time zone 'Asia/Jakarta')::date between v_start and v_end),
-    'rawExpenses', coalesce((select json_agg(json_build_array(
+    'rawExpenses', (select coalesce(json_agg(json_build_array(
         e.id, to_char(e.created_at at time zone 'Asia/Jakarta', 'YYYY-MM-DD HH24:MI:SS'), e.category, e.description, e.amount, e.payment_method)
-        order by e.created_at), '[]'::json) from expenses e
+        order by e.created_at), '[]'::json)
+      from expenses e
       where (e.created_at at time zone 'Asia/Jakarta')::date between v_start and v_end)
   ) into v_result;
   return v_result;
@@ -163,8 +172,7 @@ begin
     'balance', l.balance,
     'hpp', l.hpp_avg,
     'value', l.inventory_value
-  ) order by l.created_at), '[]'::json)
-  from stock_ledger l
+  ) order by l.created_at), '[]'::json)  from stock_ledger l
   left join products p on p.id = l.product_id
   where (l.created_at at time zone 'Asia/Jakarta')::date = v_date;
 end;
