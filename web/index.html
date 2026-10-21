@@ -842,7 +842,26 @@
 
         function loadLedgerData() {
             google.script.run.withSuccessHandler(data => {
-                document.getElementById('table-ledger').innerHTML = data.map(l => `<tr class="hover:bg-slate-50"><td class="p-3">${l.time}</td><td class="p-3 font-bold">${l.productId}</td><td class="p-3"><span class="px-2 py-0.5 bg-blue-50 text-blue-700 font-bold rounded text-[10px]">${l.refType}</span></td><td class="p-3 text-center text-emerald-600 font-bold">${l.qtyIn || '-'}</td><td class="p-3 text-center text-rose-600 font-bold">${l.qtyOut || '-'}</td><td class="p-3 text-center font-black">${l.balance}</td><td class="p-3 text-right font-semibold">${formatRp(l.hppAvg)}</td></tr>`).join('');
+                let list = [];
+                if (Array.isArray(data)) list = data;
+                else if (data && Array.isArray(data.rows) && Array.isArray(data.columns)) {
+                    const cols = data.columns.map(function(c){ return String(c).toLowerCase(); });
+                    list = data.rows.map(function(r){
+                        const o = {};
+                        cols.forEach(function(c, i){ o[c] = r[i]; });
+                        const d = Number(o['perubahan_stok']) || 0;
+                        return {
+                            time: o['waktu'] || '',
+                            productId: o['produk'] || o['referensi'] || '',
+                            refType: o['tipe'] || '',
+                            qtyIn: d > 0 ? d : null,
+                            qtyOut: d < 0 ? Math.abs(d) : null,
+                            balance: o['qty'] !== undefined ? o['qty'] : '',
+                            hppAvg: (o['nilai'] === null || o['nilai'] === undefined) ? null : o['nilai']
+                        };
+                    });
+                }
+                document.getElementById('table-ledger').innerHTML = list.length > 0 ? list.map(l => `<tr class="hover:bg-slate-50"><td class="p-3">${l.time}</td><td class="p-3 font-bold">${l.productId}</td><td class="p-3"><span class="px-2 py-0.5 bg-blue-50 text-blue-700 font-bold rounded text-[10px]">${l.refType}</span></td><td class="p-3 text-center text-emerald-600 font-bold">${l.qtyIn === null ? '-' : l.qtyIn}</td><td class="p-3 text-center text-rose-600 font-bold">${l.qtyOut === null ? '-' : l.qtyOut}</td><td class="p-3 text-center font-black">${l.balance}</td><td class="p-3 text-right font-semibold">${l.hppAvg === null ? '-' : formatRp(l.hppAvg)}</td></tr>`).join('') : `<tr><td colspan="7" class="p-4 text-center text-slate-400">Tidak ada data pergerakan stok</td></tr>`;
             }).getStockLedgerData();
         }
 
