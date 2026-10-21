@@ -1,5 +1,5 @@
 {
-  "appVersion": "2.4.5",
+  "appVersion": "2.4.6",
   "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.4.5/KelontongPOS-v2.4.5.apk",
-  "notes": "Fix laporan RpNaN; logout localStorage; landing tanpa nama produk + FAQ + struk + badge"
+  "notes": "Logout di sidebar POS (web); fix laporan finance; tombol Download App di landing"
 }

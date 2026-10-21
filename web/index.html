@@ -548,12 +548,18 @@
             const periodType = document.getElementById('report-period-type').value;
             const dateVal = document.getElementById('report-date-filter').value || todayStr;
             google.script.run.withSuccessHandler(r => {
-                document.getElementById('rep-date-range').innerText = r.dateRange;
-                document.getElementById('rep-sales').innerText = formatRp(r.sales);
-                document.getElementById('rep-hpp').innerText = formatRp(r.hpp);
-                document.getElementById('rep-gross').innerText = formatRp(r.grossProfit);
-                document.getElementById('rep-exp').innerText = formatRp(r.expenses);
-                document.getElementById('rep-net').innerText = formatRp(r.netProfit);
+                const f = (r && r.finance) ? r.finance : (r || {});
+                const num = v => (typeof v === 'number' && isFinite(v)) ? v : 0;
+                let rangeText = '-';
+                if (periodType === 'daily') rangeText = 'Tanggal ' + dateVal;
+                else if (periodType === 'monthly') { const d = new Date(dateVal); rangeText = 'Bulan ' + d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' }); }
+                else if (periodType === 'yearly') { rangeText = 'Tahun ' + dateVal.slice(0,4); }
+                document.getElementById('rep-date-range').innerText = rangeText;
+                document.getElementById('rep-sales').innerText = formatRp(num(f.sales));
+                document.getElementById('rep-hpp').innerText = formatRp(num(f.hpp));
+                document.getElementById('rep-gross').innerText = formatRp(num(f.grossProfit));
+                document.getElementById('rep-exp').innerText = formatRp(num(f.expenses));
+                document.getElementById('rep-net').innerText = formatRp(num(f.netProfit));
             }).getFilteredFinancialReport(periodType, dateVal);
         }
 
@@ -564,7 +570,7 @@
             
             google.script.run.withSuccessHandler(r => {
                 const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["LAPORAN KEUANGAN"], ["Periode", r.periodName], ["Rentang", r.dateRange], [], ["Keterangan", "Jumlah"], ["Omzet", r.sales], ["HPP", r.hpp], ["Laba Kotor", r.grossProfit], ["Pengeluaran", r.expenses], ["Laba Bersih", r.netProfit]]), "Laba Rugi");
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["LAPORAN KEUANGAN"], ["Periode", r.periodName], ["Rentang", r.dateRange], [], ["Keterangan", "Jumlah"], ["Omzet", (r.finance?r.finance.sales:r.sales)||0], ["HPP", (r.finance?r.finance.hpp:r.hpp)||0], ["Laba Kotor", (r.finance?r.finance.grossProfit:r.grossProfit)||0], ["Pengeluaran", (r.finance?r.finance.expenses:r.expenses)||0], ["Laba Bersih", (r.finance?r.finance.netProfit:r.netProfit)||0]]), "Laba Rugi");
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["ID", "Waktu", "Produk", "Satuan", "Qty", "Omzet", "Laba Kotor"], ...r.rawSales]), "Penjualan");
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["ID", "Waktu", "Supplier", "Invoice", "Produk", "Satuan", "Qty Beli", "Total Harga"], ...r.rawPurchases]), "Pembelian");
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["ID", "Waktu", "Kategori", "Deskripsi", "Jumlah", "Metode"], ...r.rawExpenses]), "Pengeluaran");
