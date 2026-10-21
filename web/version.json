@@ -1,5 +1,5 @@
 {
   "appVersion": "2.4.9",
-  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.4.8/KelontongPOS-v2.4.8.apk",
+  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.4.9/KelontongPOS-v2.4.9.apk",
   "notes": "Fix tab Stock & Ledger: renderer kini membaca format data RPC baru"
 }
