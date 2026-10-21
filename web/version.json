@@ -1,5 +1,5 @@
 {
-  "appVersion": "2.4.6",
+  "appVersion": "2.4.7",
   "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.4.6/KelontongPOS-v2.4.6.apk",
-  "notes": "Logout di sidebar POS (web); fix laporan finance; tombol Download App di landing"
+  "notes": "Fix laporan keuangan: nama parameter RPC diperbaiki (p_date/p_type) — data kini berubah sesuai tanggal & periode"
 }

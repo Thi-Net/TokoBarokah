@@ -557,9 +557,9 @@
                 const f = (r && r.finance) ? r.finance : (r || {});
                 const num = v => (typeof v === 'number' && isFinite(v)) ? v : 0;
                 let rangeText = '-';
-                if (periodType === 'daily') rangeText = 'Tanggal ' + dateVal;
-                else if (periodType === 'monthly') { const d = new Date(dateVal); rangeText = 'Bulan ' + d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' }); }
-                else if (periodType === 'yearly') { rangeText = 'Tahun ' + dateVal.slice(0,4); }
+                if (periodType === 'harian') rangeText = 'Tanggal ' + dateVal;
+                else if (periodType === 'mingguan') { const d = new Date(dateVal); rangeText = 'Minggu ' + d.toLocaleDateString('id-ID'); }
+                else if (periodType === 'bulanan') { const d = new Date(dateVal); rangeText = 'Bulan ' + d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' }); }
                 document.getElementById('rep-date-range').innerText = rangeText;
                 document.getElementById('rep-sales').innerText = formatRp(num(f.sales));
                 document.getElementById('rep-hpp').innerText = formatRp(num(f.hpp));
