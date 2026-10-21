@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Toko Barokah — KelontongPOS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="libs/fontawesome.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap');
+body { font-family: 'Rubik', system-ui, sans-serif; }
+button:active { transform: scale(0.97); }
+button { transition: transform .15s ease, background-color .15s ease; }
+:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+</style>
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+<!-- HERO -->
+<section class="min-h-[85vh] flex items-center justify-center px-4 bg-gradient-to-b from-white to-slate-100">
+  <div class="max-w-2xl text-center py-16">
+    <div class="inline-flex items-center gap-2 bg-emerald-100 text-emerald-700 text-xs font-bold px-3 py-1.5 rounded-full mb-6">
+      <i class="fa-solid fa-store"></i> TOKO BAROKAH
+    </div>
+    <h1 class="text-4xl sm:text-5xl font-extrabold leading-tight mb-4">Kelola toko klontong<br>dengan <span class="text-blue-600">satu aplikasi</span></h1>
+    <p class="text-slate-500 text-lg mb-8">POS kasir, stock opname, pembelian, dan laporan keuangan harian — data tersinkron aman, bisa dibuka dari HP maupun laptop.</p>
+    <div class="flex flex-col sm:flex-row gap-3 justify-center">
+      <button onclick="openLogin()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg px-8 min-h-[52px] rounded-2xl shadow-lg shadow-blue-600/25">
+        <i class="fa-solid fa-right-to-bracket mr-2"></i>Masuk ke POS
+      </button>
+      <a href="#fitur" class="bg-white hover:bg-slate-50 text-slate-700 font-bold text-lg px-8 min-h-[52px] rounded-2xl border border-slate-200 inline-flex items-center justify-center">
+        Lihat fitur
+      </a>
+    </div>
+    <p class="text-xs text-slate-400 mt-6"><i class="fa-solid fa-lock mr-1"></i>Akses dilindungi — hanya pemilik & staf toko</p>
+  </div>
+</section>
+
+<!-- FITUR -->
+<section id="fitur" class="px-4 pb-24">
+  <div class="max-w-4xl mx-auto grid sm:grid-cols-3 gap-4">
+    <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+      <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mb-4"><i class="fa-solid fa-cash-register text-xl"></i></div>
+      <h3 class="font-bold mb-1">POS Kasir</h3>
+      <p class="text-sm text-slate-500">Scan barcode, hitung otomatis, HPP & laba tercatat per transaksi.</p>
+    </div>
+    <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+      <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center mb-4"><i class="fa-solid fa-boxes-stacked text-xl"></i></div>
+      <h3 class="font-bold mb-1">Stok & Opname</h3>
+      <p class="text-sm text-slate-500">Kartu stok real-time, selisih opname langsung terlihat.</p>
+    </div>
+    <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+      <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center mb-4"><i class="fa-solid fa-chart-line text-xl"></i></div>
+      <h3 class="font-bold mb-1">Laporan Keuangan</h3>
+      <p class="text-sm text-slate-500">Omzet, laba kotor, pengeluaran — export Excel sekali klik.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="text-center text-xs text-slate-400 pb-10 px-4">
+  KelontongPOS · Toko Barokah · 2026
+</footer>
+
+<!-- MODAL LOGIN -->
+<div id="modal-login" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+    <div class="flex justify-between items-center mb-4 border-b pb-3">
+      <h3 class="font-bold text-lg"><i class="fa-solid fa-right-to-bracket mr-2 text-blue-600"></i>Masuk POS</h3>
+      <button onclick="closeLogin()" class="text-slate-400 hover:text-rose-500" aria-label="Tutup"><i class="fa-solid fa-xmark text-xl"></i></button>
+    </div>
+    <form onsubmit="return doLogin(event)" class="space-y-4">
+      <div>
+        <label for="login-user" class="block text-xs font-bold text-slate-500 uppercase mb-1">Username</label>
+        <input id="login-user" type="text" autocomplete="username" class="w-full border rounded-xl px-4 min-h-[46px] text-sm bg-slate-50" required>
+      </div>
+      <div>
+        <label for="login-pass" class="block text-xs font-bold text-slate-500 uppercase mb-1">Password</label>
+        <input id="login-pass" type="password" autocomplete="current-password" class="w-full border rounded-xl px-4 min-h-[46px] text-sm bg-slate-50" required>
+      </div>
+      <p id="login-err" class="hidden text-sm text-rose-600 font-bold" role="alert"></p>
+      <button type="submit" id="login-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold min-h-[48px] rounded-xl shadow-md">Masuk</button>
+    </form>
+  </div>
+</div>
+
+<script>
+// ==== KONFIG LOGIN (ubah di sini) ====
+var POS_USERS = [
+  { u: 'taufik', p: 'barokah2026' },
+  { u: 'kasir',  p: 'kasir123' }
+];
+var SESSION_MINUTES = 720; // sesi 12 jam
+
+function openLogin() {
+  // Sesi masih aktif? langsung masuk
+  try {
+    var s = JSON.parse(sessionStorage.getItem('kpos_landing_auth') || 'null');
+    if (s && s.exp > Date.now()) { goPOS(); return; }
+  } catch (e) {}
+  document.getElementById('modal-login').classList.remove('hidden');
+  setTimeout(function(){ document.getElementById('login-user').focus(); }, 100);
+}
+function closeLogin() { document.getElementById('modal-login').classList.add('hidden'); }
+function doLogin(ev) {
+  ev.preventDefault();
+  var u = document.getElementById('login-user').value.trim().toLowerCase();
+  var p = document.getElementById('login-pass').value;
+  var ok = POS_USERS.some(function(x){ return x.u === u && x.p === p; });
+  if (!ok) {
+    var el = document.getElementById('login-err');
+    el.innerText = 'Username atau password salah.';
+    el.classList.remove('hidden');
+    return false;
+  }
+  sessionStorage.setItem('kpos_landing_auth', JSON.stringify({ u: u, exp: Date.now() + SESSION_MINUTES * 60000 }));
+  goPOS();
+  return false;
+}
+function goPOS() { window.location.href = '/pos'; }
+</script>
+</body>
+</html>
