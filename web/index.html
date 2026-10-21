@@ -323,6 +323,15 @@
     <!-- SCRIPT UTAMA -->
     <script src="app-bridge.js"></script>
     <script>
+        // ==== GUARD LOGIN (khusus web — APK lewat, karena AndroidBridge ada) ====
+        (function gatePOS() {
+            var isAPK = /Android/i.test(navigator.userAgent) && window.AndroidBridge;
+            if (isAPK) return;
+            var s = null;
+            try { s = JSON.parse(sessionStorage.getItem('kpos_landing_auth') || 'null'); } catch (e) {}
+            if (!(s && s.exp > Date.now())) window.location.replace('/?redirect=pos');
+        })();
+
         const todayStr = new Date().toISOString().slice(0,10);
         document.getElementById('currentDate').innerText = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         // Jam live WIB di bawah tanggal
