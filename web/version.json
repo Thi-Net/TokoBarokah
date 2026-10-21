@@ -1,5 +1,5 @@
 {
   "appVersion": "2.3.1",
   "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.3.1/KelontongPOS-v2.3.1.apk",
-  "notes": "Fix FK violation saat simpan PRODUCT_UNITS (filter baris tak valid + info baris dilewati)"
+  "notes": "Ikon hapus produk di tab Produk; fix FK simpan PRODUCT_UNITS; badge 'Online' tanpa kata Supabase"
 }

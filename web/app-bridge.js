@@ -275,7 +275,7 @@ async function ensureSupabase() {
     try {
       const prods = await Bridge.call('getActiveProductsList', []);
       window.__kposConnected = true;
-      if (window.setConnStatus) window.setConnStatus('ok', '● Online (Supabase)');
+      if (window.setConnStatus) window.setConnStatus('ok', '● Online');
       if (window.showToast) showToast('Terkoneksi Supabase: ' + (prods ? prods.length : 0) + ' produk', 'success');
     } catch (e) {
       window.__kposConnected = false;

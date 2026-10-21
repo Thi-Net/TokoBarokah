@@ -398,6 +398,17 @@
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('-translate-x-full'); }
         function formatRp(val) { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val); }
 
+        function deleteProduct(id, name) {
+            if (!confirm('Hapus produk "' + name + '" (' + id + ')?\n\nSemua data terkait (satuan, harga, riwayat stok) ikut terhapus. Tindakan ini tidak bisa dibatalkan!')) return;
+            showToast('Menghapus ' + name + '...', 'info');
+            google.script.run.withSuccessHandler(res => {
+                showToast(res && res.message ? res.message : 'Produk dihapus', 'success');
+                loadProductsData(); loadDashboardData(true);
+            }).withFailureHandler(err => {
+                showToast('GAGAL hapus: ' + (err && err.message ? err.message : err), 'warning');
+            }).deleteProduct(id);
+        }
+
         function handleAddNewProduct(e) {
             e.preventDefault();
             const btn = document.getElementById('btn-save-new-prod');
@@ -754,7 +765,7 @@
             const container = document.getElementById('product-list-container');
             container.innerHTML = prods.map((p, idx) => `
                 <div class="p-4 bg-slate-50 rounded-xl border space-y-2">
-                    <div class="flex justify-between items-center"><span class="font-bold text-slate-800">${p.name} <span class="text-slate-400 font-medium ml-2">(${p.id})</span>${p.barcode ? `<span class="ml-2 text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold"><i class="fa-solid fa-barcode mr-1"></i>${p.barcode}</span>` : ''}</span><span class="text-xs font-bold text-slate-600 bg-slate-200 px-2 py-0.5 rounded">Stok: ${p.stock} ${p.baseUnit}</span></div>
+                    <div class="flex justify-between items-center"><span class="font-bold text-slate-800">${p.name} <span class="text-slate-400 font-medium ml-2">(${p.id})</span>${p.barcode ? `<span class="ml-2 text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold"><i class="fa-solid fa-barcode mr-1"></i>${p.barcode}</span>` : ''}</span><span class="flex items-center gap-2"><span class="text-xs font-bold text-slate-600 bg-slate-200 px-2 py-0.5 rounded">Stok: ${p.stock} ${p.baseUnit}</span><button onclick="deleteProduct('${p.id}', '${p.name.replace(/'/g, "\\'")}')" title="Hapus produk" class="text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg px-2.5 py-1.5 transition"><i class="fa-solid fa-trash-can"></i></button></span></div>
                     <div class="flex flex-wrap gap-4 pt-2 border-t text-xs">
                         ${p.units.map((u, uIdx) => `
                             <div class="flex items-center space-x-2 bg-white p-2 rounded border">
