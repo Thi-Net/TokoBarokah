@@ -7,79 +7,169 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="libs/fontawesome.css">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap');
-body { font-family: 'Rubik', system-ui, sans-serif; }
+@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800;900&display=swap');
+body { font-family: 'Rubik', system-ui, sans-serif; background: #0F172A; }
+button { transition: transform .15s ease, background-color .15s ease, box-shadow .2s ease; }
 button:active { transform: scale(0.97); }
-button { transition: transform .15s ease, background-color .15s ease; }
-:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+:focus-visible { outline: 2px solid #10B981; outline-offset: 2px; }
+
+.glow-emerald { position:absolute; border-radius:9999px; filter:blur(90px); opacity:.35; pointer-events:none; }
+.glow-blue { position:absolute; border-radius:9999px; filter:blur(100px); opacity:.25; pointer-events:none; }
+
+@keyframes riseIn { from { opacity:0; transform:translateY(14px);} to { opacity:1; transform:translateY(0);} }
+.rise { animation: riseIn .5s ease both; }
+.rise-1 { animation-delay:.05s } .rise-2 { animation-delay:.15s } .rise-3 { animation-delay:.25s } .rise-4 { animation-delay:.35s }
+@media (prefers-reduced-motion: reduce) { .rise { animation:none; } }
+
+.stat-num { font-variant-numeric: tabular-nums; }
 </style>
 </head>
-<body class="bg-slate-100 text-slate-800">
+<body class="text-slate-100 overflow-x-hidden">
+
+<!-- NAVBAR -->
+<nav class="relative z-10 flex items-center justify-between max-w-5xl mx-auto px-5 py-5">
+  <div class="flex items-center gap-2 font-extrabold text-lg">
+    <span class="w-9 h-9 bg-emerald-500 rounded-xl flex items-center justify-center text-slate-900"><i class="fa-solid fa-store"></i></span>
+    Toko Barokah
+  </div>
+  <button onclick="openLogin()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-bold text-sm px-5 min-h-[44px] rounded-xl shadow-lg shadow-emerald-500/30">
+    <i class="fa-solid fa-right-to-bracket mr-1.5"></i>Masuk
+  </button>
+</nav>
 
 <!-- HERO -->
-<section class="min-h-[85vh] flex items-center justify-center px-4 bg-gradient-to-b from-white to-slate-100">
-  <div class="max-w-2xl text-center py-16">
-    <div class="inline-flex items-center gap-2 bg-emerald-100 text-emerald-700 text-xs font-bold px-3 py-1.5 rounded-full mb-6">
-      <i class="fa-solid fa-store"></i> TOKO BAROKAH
+<header class="relative px-5 pt-10 pb-20">
+  <div class="glow-emerald bg-emerald-500 w-72 h-72 -top-10 -right-16"></div>
+  <div class="glow-blue bg-blue-600 w-80 h-80 top-32 -left-20"></div>
+
+  <div class="relative max-w-3xl mx-auto text-center">
+    <div class="rise rise-1 inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold px-4 py-2 rounded-full mb-7">
+      <span class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span> SISTEM KASIR AKTIF
     </div>
-    <h1 class="text-4xl sm:text-5xl font-extrabold leading-tight mb-4">Kelola toko klontong<br>dengan <span class="text-blue-600">satu aplikasi</span></h1>
-    <p class="text-slate-500 text-lg mb-8">POS kasir, stock opname, pembelian, dan laporan keuangan harian — data tersinkron aman, bisa dibuka dari HP maupun laptop.</p>
-    <div class="flex flex-col sm:flex-row gap-3 justify-center">
-      <button onclick="openLogin()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg px-8 min-h-[52px] rounded-2xl shadow-lg shadow-blue-600/25">
-        <i class="fa-solid fa-right-to-bracket mr-2"></i>Masuk ke POS
+
+    <h1 class="rise rise-2 text-4xl sm:text-6xl font-black leading-[1.1] tracking-tight mb-5">
+      Toko klontongmu,<br>
+      <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-400">terkelola penuh.</span>
+    </h1>
+
+    <p class="rise rise-3 text-slate-400 text-lg sm:text-xl max-w-xl mx-auto mb-9">
+      Kasir, stok, pembelian, sampai laporan laba harian — semua tercatat otomatis. Cukup HP di kasir.
+    </p>
+
+    <div class="rise rise-4 flex flex-col sm:flex-row gap-3 justify-center">
+      <button onclick="openLogin()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-extrabold text-lg px-10 min-h-[56px] rounded-2xl shadow-xl shadow-emerald-500/30">
+        <i class="fa-solid fa-cash-register mr-2"></i>Buka Kasir
       </button>
-      <a href="#fitur" class="bg-white hover:bg-slate-50 text-slate-700 font-bold text-lg px-8 min-h-[52px] rounded-2xl border border-slate-200 inline-flex items-center justify-center">
-        Lihat fitur
+      <a href="#fitur" class="bg-slate-800/80 hover:bg-slate-700 text-slate-100 font-bold text-lg px-8 min-h-[56px] rounded-2xl border border-slate-700 inline-flex items-center justify-center">
+        Lihat fitur <i class="fa-solid fa-arrow-down ml-2 text-sm"></i>
       </a>
     </div>
-    <p class="text-xs text-slate-400 mt-6"><i class="fa-solid fa-lock mr-1"></i>Akses dilindungi — hanya pemilik & staf toko</p>
+
+    <!-- Statistik strip -->
+    <div class="rise rise-4 mt-14 grid grid-cols-3 gap-3 max-w-lg mx-auto">
+      <div class="bg-slate-800/60 border border-slate-700 rounded-2xl py-4">
+        <p class="stat-num text-2xl font-black text-emerald-400">3</p>
+        <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Modul Utama</p>
+      </div>
+      <div class="bg-slate-800/60 border border-slate-700 rounded-2xl py-4">
+        <p class="stat-num text-2xl font-black text-blue-400">100%</p>
+        <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Otomatis</p>
+      </div>
+      <div class="bg-slate-800/60 border border-slate-700 rounded-2xl py-4">
+        <p class="stat-num text-2xl font-black text-orange-400">24/7</p>
+        <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Sinkron</p>
+      </div>
+    </div>
   </div>
-</section>
+</header>
 
 <!-- FITUR -->
-<section id="fitur" class="px-4 pb-24">
-  <div class="max-w-4xl mx-auto grid sm:grid-cols-3 gap-4">
-    <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-      <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mb-4"><i class="fa-solid fa-cash-register text-xl"></i></div>
-      <h3 class="font-bold mb-1">POS Kasir</h3>
-      <p class="text-sm text-slate-500">Scan barcode, hitung otomatis, HPP & laba tercatat per transaksi.</p>
+<section id="fitur" class="relative px-5 py-20">
+  <div class="glow-blue bg-blue-600 w-72 h-72 bottom-0 right-0 opacity-15"></div>
+  <div class="relative max-w-5xl mx-auto">
+    <p class="text-emerald-400 font-bold text-xs uppercase tracking-[0.2em] mb-2 text-center">Fitur Lengkap</p>
+    <h2 class="text-3xl sm:text-4xl font-extrabold text-center mb-12">Semua yang toko butuhkan</h2>
+
+    <div class="grid sm:grid-cols-3 gap-5">
+      <div class="bg-slate-800/60 border border-slate-700 rounded-3xl p-7">
+        <div class="w-14 h-14 bg-gradient-to-br from-emerald-400 to-emerald-600 text-slate-900 rounded-2xl flex items-center justify-center mb-5 shadow-lg shadow-emerald-500/25"><i class="fa-solid fa-cash-register text-xl"></i></div>
+        <h3 class="font-bold text-lg mb-2">POS Kasir</h3>
+        <p class="text-sm text-slate-400 leading-relaxed">Scan barcode langsung dari kamera HP, total & kembalian terhitung otomatis, HPP dan laba tercatat di setiap transaksi.</p>
+      </div>
+      <div class="bg-slate-800/60 border border-slate-700 rounded-3xl p-7">
+        <div class="w-14 h-14 bg-gradient-to-br from-orange-400 to-orange-600 text-slate-900 rounded-2xl flex items-center justify-center mb-5 shadow-lg shadow-orange-500/25"><i class="fa-solid fa-boxes-stacked text-xl"></i></div>
+        <h3 class="font-bold text-lg mb-2">Stok & Opname</h3>
+        <p class="text-sm text-slate-400 leading-relaxed">Kartu stok real-time per produk, stok menipis terdeteksi dini, selisih opname langsung kelihatan.</p>
+      </div>
+      <div class="bg-slate-800/60 border border-slate-700 rounded-3xl p-7">
+        <div class="w-14 h-14 bg-gradient-to-br from-blue-400 to-blue-600 text-slate-900 rounded-2xl flex items-center justify-center mb-5 shadow-lg shadow-blue-500/25"><i class="fa-solid fa-chart-line text-xl"></i></div>
+        <h3 class="font-bold text-lg mb-2">Laporan & Excel</h3>
+        <p class="text-sm text-slate-400 leading-relaxed">Omzet harian, laba kotor, pengeluaran, pembelian — tampilan grafik dan export Excel sekali klik.</p>
+      </div>
     </div>
-    <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-      <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center mb-4"><i class="fa-solid fa-boxes-stacked text-xl"></i></div>
-      <h3 class="font-bold mb-1">Stok & Opname</h3>
-      <p class="text-sm text-slate-500">Kartu stok real-time, selisih opname langsung terlihat.</p>
-    </div>
-    <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-      <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center mb-4"><i class="fa-solid fa-chart-line text-xl"></i></div>
-      <h3 class="font-bold mb-1">Laporan Keuangan</h3>
-      <p class="text-sm text-slate-500">Omzet, laba kotor, pengeluaran — export Excel sekali klik.</p>
+
+    <!-- Cara kerja -->
+    <div class="mt-14 bg-slate-800/60 border border-slate-700 rounded-3xl p-8 sm:p-10">
+      <h3 class="font-extrabold text-xl mb-7 text-center">Cara kerjanya sederhana</h3>
+      <div class="grid sm:grid-cols-3 gap-6 text-center">
+        <div>
+          <p class="w-10 h-10 mx-auto bg-emerald-500 text-slate-900 font-black rounded-full flex items-center justify-center mb-3">1</p>
+          <p class="font-bold text-sm">Masuk dengan akun toko</p>
+          <p class="text-xs text-slate-400 mt-1">Akses hanya untuk pemilik & staf.</p>
+        </div>
+        <div>
+          <p class="w-10 h-10 mx-auto bg-emerald-500 text-slate-900 font-black rounded-full flex items-center justify-center mb-3">2</p>
+          <p class="font-bold text-sm">Transaksi & input stok</p>
+          <p class="text-xs text-slate-400 mt-1">Scan, jual, beli — semua tercatat.</p>
+        </div>
+        <div>
+          <p class="w-10 h-10 mx-auto bg-emerald-500 text-slate-900 font-black rounded-full flex items-center justify-center mb-3">3</p>
+          <p class="font-bold text-sm">Laporan siap kapan saja</p>
+          <p class="text-xs text-slate-400 mt-1">Buka dashboard, unduh Excel.</p>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- FOOTER -->
-<footer class="text-center text-xs text-slate-400 pb-10 px-4">
+<!-- CTA BAWAH -->
+<section class="px-5 pb-24">
+  <div class="relative max-w-3xl mx-auto bg-gradient-to-r from-emerald-500 to-blue-500 rounded-3xl p-10 text-center overflow-hidden">
+    <div class="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full"></div>
+    <div class="absolute -bottom-14 -left-10 w-48 h-48 bg-slate-900/10 rounded-full"></div>
+    <h2 class="relative text-2xl sm:text-3xl font-black text-slate-900 mb-3">Siap buka kasir hari ini?</h2>
+    <p class="relative text-slate-900/70 font-medium mb-7 text-sm sm:text-base">Masuk dengan akun toko dan mulai catat transaksimu.</p>
+    <button onclick="openLogin()" class="relative bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-lg px-10 min-h-[54px] rounded-2xl shadow-xl">
+      <i class="fa-solid fa-right-to-bracket mr-2"></i>Masuk ke POS
+    </button>
+  </div>
+</section>
+
+<footer class="text-center text-xs text-slate-500 pb-10 px-4">
   KelontongPOS · Toko Barokah · 2026
 </footer>
 
 <!-- MODAL LOGIN -->
-<div id="modal-login" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
-  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
-    <div class="flex justify-between items-center mb-4 border-b pb-3">
-      <h3 class="font-bold text-lg"><i class="fa-solid fa-right-to-bracket mr-2 text-blue-600"></i>Masuk POS</h3>
-      <button onclick="closeLogin()" class="text-slate-400 hover:text-rose-500" aria-label="Tutup"><i class="fa-solid fa-xmark text-xl"></i></button>
+<div id="modal-login" class="fixed inset-0 bg-slate-900/80 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+  <div class="bg-slate-800 border border-slate-700 rounded-3xl shadow-2xl w-full max-w-sm p-7">
+    <div class="flex justify-between items-center mb-5">
+      <h3 class="font-extrabold text-lg flex items-center gap-2">
+        <span class="w-9 h-9 bg-emerald-500 rounded-xl flex items-center justify-center text-slate-900"><i class="fa-solid fa-lock text-sm"></i></span>
+        Masuk POS
+      </h3>
+      <button onclick="closeLogin()" class="text-slate-400 hover:text-rose-400 min-w-[44px] min-h-[44px]" aria-label="Tutup"><i class="fa-solid fa-xmark text-xl"></i></button>
     </div>
     <form onsubmit="return doLogin(event)" class="space-y-4">
       <div>
-        <label for="login-user" class="block text-xs font-bold text-slate-500 uppercase mb-1">Username</label>
-        <input id="login-user" type="text" autocomplete="username" class="w-full border rounded-xl px-4 min-h-[46px] text-sm bg-slate-50" required>
+        <label for="login-user" class="block text-xs font-bold text-slate-400 uppercase mb-1.5">Username</label>
+        <input id="login-user" type="text" autocomplete="username" class="w-full bg-slate-900 border border-slate-600 focus:border-emerald-500 rounded-xl px-4 min-h-[48px] text-slate-100 text-sm" required>
       </div>
       <div>
-        <label for="login-pass" class="block text-xs font-bold text-slate-500 uppercase mb-1">Password</label>
-        <input id="login-pass" type="password" autocomplete="current-password" class="w-full border rounded-xl px-4 min-h-[46px] text-sm bg-slate-50" required>
+        <label for="login-pass" class="block text-xs font-bold text-slate-400 uppercase mb-1.5">Password</label>
+        <input id="login-pass" type="password" autocomplete="current-password" class="w-full bg-slate-900 border border-slate-600 focus:border-emerald-500 rounded-xl px-4 min-h-[48px] text-slate-100 text-sm" required>
       </div>
-      <p id="login-err" class="hidden text-sm text-rose-600 font-bold" role="alert"></p>
-      <button type="submit" id="login-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold min-h-[48px] rounded-xl shadow-md">Masuk</button>
+      <p id="login-err" class="hidden text-sm text-rose-400 font-bold" role="alert"></p>
+      <button type="submit" id="login-btn" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-extrabold min-h-[50px] rounded-xl shadow-lg shadow-emerald-500/25">Masuk</button>
     </form>
   </div>
 </div>
@@ -93,7 +183,6 @@ var POS_USERS = [
 var SESSION_MINUTES = 720; // sesi 12 jam
 
 function openLogin() {
-  // Sesi masih aktif? langsung masuk
   try {
     var s = JSON.parse(sessionStorage.getItem('kpos_landing_auth') || 'null');
     if (s && s.exp > Date.now()) { goPOS(); return; }
