@@ -139,7 +139,18 @@ const Bridge = {
       });
     if (rows.length === 0) return { status: 'success' };
     let table, conflict;
-    if (sheetName === 'PRODUCTS') { table = 'products'; conflict = 'id'; }
+    if (sheetName === 'PRODUCTS') {
+      table = 'products'; conflict = 'id';
+      // buang baris tanpa id + dedupe id kembar
+      const knownIds = {}; const uniqP = [];
+      for (const r of rows) {
+        r.id = String(r.id || '').trim();
+        if (!r.id) continue;
+        knownIds[r.id] = r;
+      }
+      for (const k in knownIds) uniqP.push(knownIds[k]);
+      rows.length = 0; uniqP.forEach(r => rows.push(r));
+    }
     else if (sheetName === 'PRODUCT_UNITS') {
       table = 'product_units'; conflict = 'product_id,unit_name';
       // Validasi FK: buang baris dengan product_id kosong/tak dikenal (mencegah foreign key violation)
@@ -156,8 +167,16 @@ const Bridge = {
         valid.push(r);
       }
       if (valid.length === 0) throw new Error('Tidak ada baris valid: product_id harus produk yang sudah terdaftar (mis. PRD-001). Baris ditolak: ' + skipped);
-      rows.length = 0; valid.forEach(r => rows.push(r));
-      Bridge._lastSkipped = skipped;
+      // Dedupe: baris kembar (product_id+unit_name sama) → simpan hanya yang terakhir
+      const seen = {};
+      const uniq = [];
+      for (const r of valid) {
+        const key = r.product_id + '|' + r.unit_name;
+        seen[key] = r; // yang belakangan menang
+      }
+      for (const k in seen) uniq.push(seen[k]);
+      rows.length = 0; uniq.forEach(r => rows.push(r));
+      Bridge._lastSkipped = skipped + (valid.length - uniq.length);
     }
     else throw new Error('Simpan langsung hanya untuk tabel PRODUCTS / PRODUCT_UNITS');
     const res = await fetch(this.url + '/rest/v1/' + table + '?on_conflict=' + conflict, {
