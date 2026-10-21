@@ -1,5 +1,5 @@
 {
-  "appVersion": "2.2.5",
-  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.2.5/KelontongPOS-v2.2.5.apk",
-  "notes": "Simpan Database Raw: tampilkan pesan error asli jika gagal"
+  "appVersion": "2.3",
+  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.3/KelontongPOS-v2.3.apk",
+  "notes": "Kolom barcode + scanner di Tambah Produk Baru; error simpan Database Raw tampil jelas"
 }

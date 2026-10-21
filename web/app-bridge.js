@@ -41,7 +41,7 @@ const ADAPTERS = {
   },
   addNewProduct(p) {
     return ['add_new_product', { p_name: p.name, p_category: p.category, p_base_unit: p.baseUnit,
-      p_hpp: p.hpp, p_selling_price: p.sellingPrice }];
+      p_hpp: p.hpp, p_selling_price: p.sellingPrice, p_barcode: p.barcode || '' }];
   },
   addNewUnitToProduct(p) {
     return ['add_new_unit_to_product', { p_product_id: p.productId, p_unit_name: p.unitName,

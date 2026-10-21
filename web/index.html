@@ -41,6 +41,13 @@
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nama Produk</label>
                     <input type="text" id="new-prod-name" placeholder="Misal: Kecap Bango 220ml" class="w-full border rounded-xl px-4 py-2 text-sm bg-slate-50" required>
                 </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Barcode</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="new-prod-barcode" placeholder="Scan atau ketik no. barcode" class="flex-1 border rounded-xl px-4 py-2 text-sm bg-slate-50">
+                        <button type="button" onclick="openScanner('newprod')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 rounded-xl shadow-sm"><i class="fa-solid fa-barcode text-lg"></i></button>
+                    </div>
+                </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Kategori</label>
@@ -397,6 +404,7 @@
             btn.disabled = true; btn.innerText = "Mengecek Database...";
 
             const name = document.getElementById('new-prod-name').value;
+            const barcode = (document.getElementById('new-prod-barcode').value || '').trim();
             const unit = document.getElementById('new-prod-unit').value;
             const cat = document.getElementById('new-prod-cat').value;
             const hpp = parseFloat(document.getElementById('new-prod-hpp').value) || 0;
@@ -433,7 +441,7 @@
                     google.script.run.withSuccessHandler(r => {
                         showToast(r.message, "success");
                         closeProductModal();
-                    }).addNewProduct({ name: name, category: cat, baseUnit: unit, hpp: hpp, sellingPrice: price });
+                    }).addNewProduct({ name: name, barcode: barcode, category: cat, baseUnit: unit, hpp: hpp, sellingPrice: price });
                 }
             }).checkProductExists(name, unit);
         }
@@ -441,6 +449,7 @@
         function closeProductModal() {
             document.getElementById('modal-add-product').classList.add('hidden');
             document.getElementById('new-prod-name').value = '';
+            document.getElementById('new-prod-barcode').value = '';
             document.getElementById('new-prod-price').value = '';
             const btn = document.getElementById('btn-save-new-prod');
             btn.disabled = false; btn.innerText = "Simpan ke Master Data";
@@ -638,6 +647,16 @@
         }
 
         function onScanSuccess(decodedText) {
+            // Mode: scan untuk kolom barcode produk baru (tidak mencari produk)
+            if (scannerTarget === 'newprod') {
+                const bcEl = document.getElementById('new-prod-barcode');
+                const dupe = globalProducts.find(p => String(p.barcode || '') === decodedText.trim());
+                closeScanner();
+                if (bcEl) bcEl.value = decodedText.trim();
+                if (dupe) showToast('⚠ Barcode sudah dipakai produk: ' + dupe.name, 'warning');
+                else showToast('Barcode terisi: ' + decodedText.trim(), 'success');
+                return;
+            }
             // cari produk berdasarkan barcode ATAU id
             const prod = globalProducts.find(p =>
                 String(p.barcode || '') === decodedText.trim() || p.id === decodedText.trim());
