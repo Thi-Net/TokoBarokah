@@ -1,5 +1,5 @@
 {
   "appVersion": "2.4.8",
-  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.4.7/KelontongPOS-v2.4.7.apk",
+  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.4.8/KelontongPOS-v2.4.8.apk",
   "notes": "Fix urutan parameter RPC laporan keuangan (p_type, p_date)"
 }
