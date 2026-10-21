@@ -4,12 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KelontongPOS - Enterprise Dashboard</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#2563eb">
     <script src="libs/tailwind.js"></script>
     <link rel="stylesheet" href="libs/fontawesome.css">
     <script src="libs/chart.umd.js"></script>
     <script src="libs/xlsx.full.min.js"></script>
+    <script src="libs/html5-qrcode.min.js"></script>
     <style>
         body { font-family: 'Inter', -apple-system, 'Segoe UI', Roboto, sans-serif; }
         .tab-content { display: none; animation: fadeIn 0.2s ease-in-out; }
@@ -64,6 +63,18 @@
                 </div>
                 <button type="submit" id="btn-save-new-prod" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl shadow-md mt-2 transition">Simpan ke Master Data</button>
             </form>
+        </div>
+    </div>
+
+    <!-- MODAL SCANNER BARCODE -->
+    <div id="modal-scanner" class="fixed inset-0 bg-slate-900/80 z-[70] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-5">
+            <div class="flex justify-between items-center mb-3 border-b pb-2">
+                <h3 class="font-bold text-lg text-slate-800"><i class="fa-solid fa-barcode mr-2 text-blue-600"></i>Scan Barcode</h3>
+                <button onclick="closeScanner()" class="text-slate-400 hover:text-rose-500"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div id="scanner-reader" class="rounded-xl overflow-hidden"></div>
+            <p class="text-xs text-slate-400 mt-2 text-center">Arahkan barcode ke kamera. Produk akan terpilih otomatis.</p>
         </div>
     </div>
 
@@ -134,7 +145,10 @@
                             <h3 class="font-bold text-slate-800">Tambah ke Keranjang</h3>
                             <div class="relative">
                                 <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Cari Produk</label>
-                                <input type="text" id="sale-search" placeholder="Ketik nama..." oninput="filterUniversalProducts(this.value, 'sale')" autocomplete="off" class="w-full border rounded-xl px-4 py-2.5 text-sm bg-slate-50">
+                                <div class="flex gap-2">
+                                    <input type="text" id="sale-search" placeholder="Ketik nama / barcode..." oninput="filterUniversalProducts(this.value, 'sale')" autocomplete="off" class="w-full border rounded-xl px-4 py-2.5 text-sm bg-slate-50">
+                                    <button type="button" onclick="openScanner('sale')" class="shrink-0 bg-blue-600 hover:bg-blue-700 text-white px-3 rounded-xl transition"><i class="fa-solid fa-barcode text-lg"></i></button>
+                                </div>
                                 <div id="sale-dropdown" class="absolute left-0 right-0 bg-white border rounded-xl shadow-lg mt-1 max-h-48 overflow-y-auto z-30 hidden"></div><input type="hidden" id="sale-product-id">
                             </div>
                             <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Satuan</label><select id="sale-unit" class="w-full border rounded-xl px-4 py-2.5 text-sm bg-slate-50"></select></div>
@@ -180,7 +194,13 @@
                         </div>
                         <form onsubmit="handlePurchaseSubmit(event)" class="space-y-4">
                           <div class="grid grid-cols-2 gap-4"><div><input type="text" id="pur-supplier" placeholder="Supplier" class="w-full border rounded-xl px-4 py-2.5 text-sm bg-slate-50" required></div><div><input type="text" id="pur-invoice" placeholder="No Invoice" class="w-full border rounded-xl px-4 py-2.5 text-sm bg-slate-50" required></div></div>
-                          <div class="relative"><input type="text" id="pur-search" placeholder="Cari Produk..." oninput="filterUniversalProducts(this.value, 'pur')" class="w-full border rounded-xl px-4 py-2.5 text-sm bg-slate-50" required><div id="pur-dropdown" class="absolute left-0 right-0 bg-white border shadow-lg mt-1 hidden z-30"></div><input type="hidden" id="pur-product-id"></div>
+                          <div class="relative">
+                            <div class="flex gap-2">
+                              <input type="text" id="pur-search" placeholder="Cari Produk..." oninput="filterUniversalProducts(this.value, 'pur')" class="w-full border rounded-xl px-4 py-2.5 text-sm bg-slate-50" required>
+                              <button type="button" onclick="openScanner('pur')" class="shrink-0 bg-blue-600 hover:bg-blue-700 text-white px-3 rounded-xl transition"><i class="fa-solid fa-barcode text-lg"></i></button>
+                            </div>
+                            <div id="pur-dropdown" class="absolute left-0 right-0 bg-white border shadow-lg mt-1 hidden z-30"></div><input type="hidden" id="pur-product-id">
+                          </div>
                           <div class="grid grid-cols-3 gap-3"><div><select id="pur-unit" class="w-full border rounded-xl px-4 py-2.5 text-sm bg-slate-50"></select></div><div><input type="number" id="pur-qty" placeholder="Qty" min="1" class="w-full border rounded-xl px-4 py-2.5 text-sm bg-slate-50" required></div><div><input type="number" id="pur-total" placeholder="Total (Rp)" class="w-full border rounded-xl px-4 py-2.5 text-sm bg-slate-50" required></div></div>
                           <button type="submit" id="btn-submit-pur" class="w-full bg-slate-900 text-white font-bold py-3 rounded-xl">Simpan Pembelian</button>
                         </form>
@@ -197,7 +217,13 @@
                             </button>
                         </div>
                         <form onsubmit="handleOpnameSubmit(event)" class="space-y-4">
-                          <div class="relative"><input type="text" id="op-search" placeholder="Cari Produk..." oninput="filterUniversalProducts(this.value, 'op')" class="w-full border rounded-xl px-4 py-2.5 text-sm bg-slate-50" required><div id="op-dropdown" class="absolute left-0 right-0 bg-white border shadow-lg mt-1 hidden z-30"></div><input type="hidden" id="op-product-id"></div>
+                          <div class="relative">
+                            <div class="flex gap-2">
+                              <input type="text" id="op-search" placeholder="Cari Produk..." oninput="filterUniversalProducts(this.value, 'op')" class="w-full border rounded-xl px-4 py-2.5 text-sm bg-slate-50" required>
+                              <button type="button" onclick="openScanner('op')" class="shrink-0 bg-blue-600 hover:bg-blue-700 text-white px-3 rounded-xl transition"><i class="fa-solid fa-barcode text-lg"></i></button>
+                            </div>
+                            <div id="op-dropdown" class="absolute left-0 right-0 bg-white border shadow-lg mt-1 hidden z-30"></div><input type="hidden" id="op-product-id">
+                          </div>
                           <div class="grid grid-cols-2 gap-4"><div><select id="op-unit" class="w-full border rounded-xl px-4 py-2.5 text-sm bg-slate-50"></select></div><div><input type="number" id="op-qty" placeholder="Qty Fisik" class="w-full border rounded-xl px-4 py-2.5 text-sm bg-slate-50" required></div></div>
                           <input type="text" id="op-notes" placeholder="Catatan" class="w-full border rounded-xl px-4 py-2.5 text-sm bg-slate-50">
                           <button type="submit" id="btn-submit-op" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl">Proses Adjustment</button>
@@ -471,41 +497,128 @@
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["ID", "Waktu", "Supplier", "Invoice", "Produk", "Satuan", "Qty Beli", "Total Harga"], ...r.rawPurchases]), "Pembelian");
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["ID", "Waktu", "Kategori", "Deskripsi", "Jumlah", "Metode"], ...r.rawExpenses]), "Pengeluaran");
                 
-                XLSX.writeFile(wb, `Laporan_${periodType}_${dateVal}.xlsx`);
+                const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+                downloadBlob(new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), `Laporan_${periodType}_${dateVal}.xlsx`);
                 showToast("Excel berhasil diunduh!", "success");
             }).getFilteredFinancialReport(periodType, dateVal);
         }
 
-        function loadDashboardData() {
-            if (typeof google !== 'undefined' && google.script && google.script.run) {
-                google.script.run.withSuccessHandler(res => {
-                    document.getElementById('metric-sales').innerText = formatRp(res.finance.sales);
-                    document.getElementById('metric-purchases').innerText = formatRp(res.finance.purchases);
-                    document.getElementById('metric-grossprofit').innerText = formatRp(res.finance.grossProfit);
-                    document.getElementById('metric-netprofit').innerText = formatRp(res.finance.netProfit);
-                    document.getElementById('inv-safe').innerText = res.inventoryHealth.safe;
-                    document.getElementById('inv-low').innerText = res.inventoryHealth.low;
-                    document.getElementById('inv-critical').innerText = res.inventoryHealth.critical;
-                    document.getElementById('low-stock-container').innerHTML = res.inventoryHealth.items.length > 0 ? res.inventoryHealth.items.map(it => `<div class="flex justify-between p-2 bg-slate-50 rounded-xl text-xs"><span class="font-bold">${it.name}</span><span class="px-2 py-0.5 bg-rose-100 text-rose-700 font-bold rounded text-[10px]">Stok: ${it.stock}</span></div>`).join('') : `<div class="p-3 bg-emerald-50 text-emerald-700 rounded-xl text-xs text-center font-bold">Stok aman!</div>`;
-                    
-                    if(salesChartInstance) salesChartInstance.destroy();
-                    const ctx = document.getElementById('salesChart').getContext('2d');
-                    salesChartInstance = new Chart(ctx, { type: 'line', data: { labels: res.chart.labels, datasets: [{ label: 'Omzet Harian', data: res.chart.data, borderColor: '#2563eb', tension: 0.35, fill: true, backgroundColor: 'rgba(37, 99, 235, 0.05)', borderWidth: 3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } } } });
-                }).getDashboardSummary();
+        // Helper: unduh blob di APK via AndroidBridge (MediaStore Downloads), fallback web
+        function downloadBlob(blob, fileName) {
+            const isAndroid = /Android/i.test(navigator.userAgent) && window.AndroidBridge && window.AndroidBridge.saveFile;
+            if (isAndroid) {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const b64 = reader.result.split(',')[1];
+                    const path = window.AndroidBridge.saveFile(fileName, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', b64);
+                    if (String(path).startsWith('ERROR')) showToast('Gagal simpan: ' + path, 'warning');
+                    else showToast('Tersimpan di ' + path, 'success');
+                };
+                reader.readAsDataURL(blob);
+            } else {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = fileName; a.click();
+                setTimeout(() => URL.revokeObjectURL(url), 5000);
             }
+        }
+
+        // ==== Performa: cache dashboard & cegah muat ulang beruntun ====
+        let dashLastLoad = 0, dashCache = null;
+        function loadDashboardData(force) {
+            const now = Date.now();
+            if (!force && dashCache && now - dashLastLoad < 60000) {
+                renderDashboard(dashCache); // pakai cache < 60 detik
+                return;
+            }
+            google.script.run.withSuccessHandler(res => {
+                dashCache = res; dashLastLoad = now;
+                renderDashboard(res);
+            }).getDashboardSummary();
+        }
+
+        function renderDashboard(res) {
+            if (!res || !res.finance) return;
+            document.getElementById('metric-sales').innerText = formatRp(res.finance.sales);
+            document.getElementById('metric-purchases').innerText = formatRp(res.finance.purchases);
+            document.getElementById('metric-grossprofit').innerText = formatRp(res.finance.grossProfit);
+            document.getElementById('metric-netprofit').innerText = formatRp(res.finance.netProfit);
+            document.getElementById('inv-safe').innerText = res.inventoryHealth.safe;
+            document.getElementById('inv-low').innerText = res.inventoryHealth.low;
+            document.getElementById('inv-critical').innerText = res.inventoryHealth.critical;
+            document.getElementById('low-stock-container').innerHTML = res.inventoryHealth.items.length > 0 ? res.inventoryHealth.items.map(it => `<div class="flex justify-between p-2 bg-slate-50 rounded-xl text-xs"><span class="font-bold">${it.name}</span><span class="px-2 py-0.5 bg-rose-100 text-rose-700 font-bold rounded text-[10px]">Stok: ${it.stock}</span></div>`).join('') : `<div class="p-3 bg-emerald-50 text-emerald-700 rounded-xl text-xs text-center font-bold">Stok aman!</div>`;
+
+            if (!res.chart || !res.chart.labels) return;
+            if(salesChartInstance) salesChartInstance.destroy();
+            const ctx = document.getElementById('salesChart').getContext('2d');
+            salesChartInstance = new Chart(ctx, { type: 'line', data: { labels: res.chart.labels, datasets: [{ label: 'Omzet Harian', data: res.chart.data, borderColor: '#2563eb', tension: 0.35, fill: true, backgroundColor: 'rgba(37, 99, 235, 0.05)', borderWidth: 3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } } } });
         }
 
         function filterUniversalProducts(query, type) {
             const dropdown = document.getElementById(type + '-dropdown');
-            const filtered = globalProducts.filter(p => p.name.toLowerCase().includes(query.toLowerCase()));
+            const q = (query || '').toLowerCase().trim();
+            // Cari berdasarkan nama ATAU barcode
+            const filtered = globalProducts.filter(p =>
+                p.name.toLowerCase().includes(q) || String(p.barcode || '').toLowerCase().includes(q) && q !== '');
             if(filtered.length > 0) {
                 dropdown.innerHTML = filtered.map(p => `
                     <div onclick="selectUniversalProduct('${p.id}', '${p.name.replace(/'/g, "\\'")}', '${type}')" class="px-4 py-2.5 hover:bg-blue-50 cursor-pointer text-sm font-medium border-b flex justify-between">
-                        <span>${p.name}</span><span class="text-xs text-slate-400">Stok: ${p.stock}</span>
+                        <span>${p.name}${p.barcode ? ` <span class="text-[10px] text-slate-400 ml-1">${p.barcode}</span>` : ''}</span><span class="text-xs text-slate-400">Stok: ${p.stock}</span>
                     </div>
                 `).join('');
                 dropdown.classList.remove('hidden');
             } else { dropdown.classList.add('hidden'); }
+        }
+
+        // ==== SCANNER BARCODE (html5-qrcode) ====
+        let scannerInstance = null, scannerTarget = null, scannerActive = false;
+
+        function openScanner(type) {
+            scannerTarget = type;
+            document.getElementById('modal-scanner').classList.remove('hidden');
+            setTimeout(startScanner, 150);
+        }
+
+        function startScanner() {
+            if (scannerActive) return;
+            const cfg = { fps: 10, qrbox: { width: 260, height: 140 }, aspectRatio: 1.2 };
+            Html5Qrcode.getCameras().then(cameras => {
+                if (!cameras || cameras.length === 0) { showToast('Kamera tidak ditemukan', 'warning'); closeScanner(); return; }
+                // pilih kamera belakang bila ada
+                let cam = cameras[0].id;
+                const back = cameras.find(c => /back|rear|environment/i.test(c.label));
+                if (back) cam = back.id;
+                scannerInstance = new Html5Qrcode('scanner-reader');
+                scannerActive = true;
+                scannerInstance.start(cam, cfg, onScanSuccess, () => {})
+                    .catch(err => { showToast('Gagal buka kamera: ' + err, 'warning'); closeScanner(); });
+            }).catch(err => { showToast('Gagal akses kamera: ' + err, 'warning'); closeScanner(); });
+        }
+
+        function onScanSuccess(decodedText) {
+            // cari produk berdasarkan barcode ATAU id
+            const prod = globalProducts.find(p =>
+                String(p.barcode || '') === decodedText.trim() || p.id === decodedText.trim());
+            closeScanner();
+            if (!prod) {
+                showToast('Barcode "' + decodedText + '" tidak ditemukan di master produk', 'warning');
+                return;
+            }
+            // isi form target: barcode di search, id di hidden, satuan & harga otomatis
+            const type = scannerTarget;
+            selectUniversalProduct(prod.id, prod.name, type);
+            const searchEl = document.getElementById(type + '-search');
+            if (searchEl && prod.barcode) searchEl.value = prod.barcode + ' — ' + prod.name;
+            showToast('✓ ' + prod.name + ' (Rp ' + (prod.prices[Object.keys(prod.prices)[0]] || 0).toLocaleString('id-ID') + ')', 'success');
+        }
+
+        function closeScanner() {
+            if (scannerInstance && scannerActive) {
+                scannerInstance.stop().then(() => {
+                    scannerInstance.clear(); scannerInstance = null; scannerActive = false;
+                }).catch(() => { scannerInstance = null; scannerActive = false; });
+            }
+            document.getElementById('modal-scanner').classList.add('hidden');
         }
 
         function selectUniversalProduct(id, name, type) {
@@ -578,7 +691,7 @@
             const container = document.getElementById('product-list-container');
             container.innerHTML = prods.map((p, idx) => `
                 <div class="p-4 bg-slate-50 rounded-xl border space-y-2">
-                    <div class="flex justify-between items-center"><span class="font-bold text-slate-800">${p.name} <span class="text-slate-400 font-medium ml-2">(${p.id})</span></span><span class="text-xs font-bold text-slate-600 bg-slate-200 px-2 py-0.5 rounded">Stok: ${p.stock} ${p.baseUnit}</span></div>
+                    <div class="flex justify-between items-center"><span class="font-bold text-slate-800">${p.name} <span class="text-slate-400 font-medium ml-2">(${p.id})</span>${p.barcode ? `<span class="ml-2 text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold"><i class="fa-solid fa-barcode mr-1"></i>${p.barcode}</span>` : ''}</span><span class="text-xs font-bold text-slate-600 bg-slate-200 px-2 py-0.5 rounded">Stok: ${p.stock} ${p.baseUnit}</span></div>
                     <div class="flex flex-wrap gap-4 pt-2 border-t text-xs">
                         ${p.units.map((u, uIdx) => `
                             <div class="flex items-center space-x-2 bg-white p-2 rounded border">
