@@ -1,5 +1,5 @@
 {
-  "appVersion": "2.4",
+  "appVersion": "2.4.1",
   "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.4/KelontongPOS-v2.4.apk",
-  "notes": "UI/UX polish: font Rubik, touch target besar, feedback tekan, angka metrik lebih besar"
+  "notes": "Landing page + login gate (khusus web); APK tetap langsung POS"
 }
