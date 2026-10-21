@@ -1,5 +1,5 @@
 {
-  "appVersion": "2.3.2",
-  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.3.2/KelontongPOS-v2.3.2.apk",
-  "notes": "Fix simpan Database Raw: baris duplikat di-dedupe; guard data null di tab Produk"
+  "appVersion": "2.4",
+  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.4/KelontongPOS-v2.4.apk",
+  "notes": "UI/UX polish: font Rubik, touch target besar, feedback tekan, angka metrik lebih besar"
 }
