@@ -17,7 +17,7 @@ const FN_MAP = {
   getActiveProductsList:        { rpc: 'get_active_products_list', args: [] },
   getStockLedgerData:           { rpc: 'get_stock_ledger_data', args: [] },
   getDailyOmzetData:            { rpc: 'get_daily_omzet_data', args: ['p_date'] },
-  getFilteredFinancialReport:   { rpc: 'get_filtered_financial_report', args: ['p_date', 'p_type'] },
+  getFilteredFinancialReport:   { rpc: 'get_filtered_financial_report', args: ['p_type', 'p_date'] },
   checkProductExists:           { rpc: 'check_product_exists', args: ['p_name', 'p_unit'] },
   getRawSheetData:              { rpc: 'get_raw_table', args: ['p_table'] },
   updateSellingPrice:           { rpc: 'update_selling_price', args: ['p_product_id', 'p_unit_name', 'p_new_price'] },
