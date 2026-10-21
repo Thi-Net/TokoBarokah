@@ -1,5 +1,5 @@
 {
-  "appVersion": "2.4.3",
+  "appVersion": "2.4.4",
   "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.4/KelontongPOS-v2.4.apk",
-  "notes": "Guard login di /pos (web wajib login via landing; APK langsung)"
+  "notes": "Landing lebih ramai: marquee produk, bento grid, testimoni; tombol logout saat sesi aktif"
 }
