@@ -1,5 +1,5 @@
 {
-  "appVersion": "2.2.2",
-  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.2.2/KelontongPOS-v2.2.2.apk",
-  "notes": "Bugfix simpan Database Raw (kolom & tipe data)"
+  "appVersion": "2.2.3",
+  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.2.3/KelontongPOS-v2.2.3.apk",
+  "notes": "Auto-reconnect saat dibuka; badge langsung Online"
 }

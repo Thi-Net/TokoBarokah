@@ -835,9 +835,24 @@
         }
 
         document.addEventListener("DOMContentLoaded", () => {
-            loadDashboardData();
-            loadProductsData();
-            loadFinancialReport();
+            // Auto-reconnect diam-diam bila URL+key tersimpan
+            const su = localStorage.getItem('kpos_sb_url'), sk = localStorage.getItem('kpos_sb_key');
+            if (su && sk) {
+                setConnStatus('wait', 'Menghubungkan...');
+                Bridge.setConfig(su, sk);
+                testConnection(su, sk).then(prods => {
+                    globalProducts = prods || [];
+                    window.__kposConnected = true;
+                    setConnStatus('ok', '● Online');
+                    loadDashboardData(); loadProductsData(); loadFinancialReport();
+                }).catch(err => {
+                    window.__kposConnected = false;
+                    setConnStatus('fail', '● Gagal — tap untuk atur');
+                });
+            } else {
+                setConnStatus('fail', '● Atur koneksi');
+                loadDashboardData(); loadProductsData(); loadFinancialReport();
+            }
         });
     </script>
 </body>
