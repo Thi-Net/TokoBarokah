@@ -328,7 +328,7 @@
             var isAPK = /Android/i.test(navigator.userAgent) && window.AndroidBridge;
             if (isAPK) return;
             var s = null;
-            try { s = JSON.parse(sessionStorage.getItem('kpos_landing_auth') || 'null'); } catch (e) {}
+            try { s = JSON.parse(localStorage.getItem('kpos_landing_auth') || 'null'); } catch (e) {}
             if (!(s && s.exp > Date.now())) window.location.replace('/?redirect=pos');
         })();
 

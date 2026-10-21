@@ -1,5 +1,5 @@
 {
-  "appVersion": "2.4.4",
+  "appVersion": "2.4.5",
   "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.4/KelontongPOS-v2.4.apk",
-  "notes": "Landing lebih ramai: marquee produk, bento grid, testimoni; tombol logout saat sesi aktif"
+  "notes": "Fix laporan RpNaN; logout localStorage; landing tanpa nama produk + FAQ + struk + badge"
 }
