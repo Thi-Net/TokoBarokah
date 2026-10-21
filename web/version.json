@@ -1,5 +1,5 @@
 {
-  "appVersion": "2.2.3",
-  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.2.3/KelontongPOS-v2.2.3.apk",
-  "notes": "Auto-reconnect saat dibuka; badge langsung Online"
+  "appVersion": "2.2.4",
+  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.2.4/KelontongPOS-v2.2.4.apk",
+  "notes": "Fix script mati (operator ?? tidak didukung) — badge Online normal"
 }

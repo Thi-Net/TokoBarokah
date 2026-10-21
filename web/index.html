@@ -772,8 +772,9 @@
             const dateVal = document.getElementById('omset-date-filter').value || todayStr;
             google.script.run.withSuccessHandler(res => {
                 const rows = Array.isArray(res) ? res : (res && Array.isArray(res.transactions) ? res.transactions : []);
-                const totOmzet = Array.isArray(res) ? rows.reduce((a,t)=>a+(Number(t.total)||0),0) : (res && res.totalOmzet ?? rows.reduce((a,t)=>a+(Number(t.total)||0),0));
-                const totProfit = Array.isArray(res) ? rows.reduce((a,t)=>a+(Number(t.profit)||0),0) : (res && res.totalProfit ?? rows.reduce((a,t)=>a+(Number(t.profit)||0),0));
+                const sumFn = function(list, k){ let s=0; for (const t of list) s += (Number(t[k])||0); return s; };
+                const totOmzet = Array.isArray(res) ? sumFn(rows,'total') : (res && res.totalOmzet !== undefined ? res.totalOmzet : sumFn(rows,'total'));
+                const totProfit = Array.isArray(res) ? sumFn(rows,'profit') : (res && res.totalProfit !== undefined ? res.totalProfit : sumFn(rows,'profit'));
                 document.getElementById('omset-total-val').innerText = formatRp(totOmzet);
                 document.getElementById('omset-profit-val').innerText = formatRp(totProfit);
                 document.getElementById('table-omset-harian').innerHTML = rows.length > 0 ? rows.map(t => `<tr class="hover:bg-slate-50"><td class="p-3">${t.time}</td><td class="p-3 font-bold">${t.product}</td><td class="p-3">${t.unit}</td><td class="p-3 text-center font-bold">${t.qty}</td><td class="p-3 text-right font-black text-blue-600">${formatRp(t.total)}</td></tr>`).join('') : `<tr><td colspan="5" class="p-4 text-center text-slate-400">Tidak ada transaksi</td></tr>`;
