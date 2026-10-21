@@ -123,12 +123,18 @@ const Bridge = {
     if (!this.url || !this.key) throw new Error('Supabase belum diatur');
     const headers = this.headers();
     headers['Prefer'] = 'resolution=merge-duplicates';
-    const cols = (matrix[0] || []).map(c => String(c).trim());
+    const cols = (matrix[0] || []).map(c => String(c).trim().toLowerCase());
     const rows = matrix.slice(1)
       .filter(r => r.some(c => String(c).trim() !== ''))
       .map(r => {
         const o = {};
-        cols.forEach((c, i) => { o[c] = r[i] !== undefined ? r[i] : ''; });
+        cols.forEach((c, i) => {
+          let v = r[i] !== undefined ? r[i] : '';
+          const s = String(v).trim();
+          if (/^(true|false)$/i.test(s)) v = s.toLowerCase() === 'true';
+          else if (s !== '' && !isNaN(s) && /^(reorder_point|conversion_rate|price|amount|total_|qty|balance|hpp)/.test(c)) v = Number(s);
+          o[c] = v;
+        });
         return o;
       });
     if (rows.length === 0) return { status: 'success' };
