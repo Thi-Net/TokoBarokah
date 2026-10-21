@@ -140,7 +140,25 @@ const Bridge = {
     if (rows.length === 0) return { status: 'success' };
     let table, conflict;
     if (sheetName === 'PRODUCTS') { table = 'products'; conflict = 'id'; }
-    else if (sheetName === 'PRODUCT_UNITS') { table = 'product_units'; conflict = 'product_id,unit_name'; }
+    else if (sheetName === 'PRODUCT_UNITS') {
+      table = 'product_units'; conflict = 'product_id,unit_name';
+      // Validasi FK: buang baris dengan product_id kosong/tak dikenal (mencegah foreign key violation)
+      const known = {};
+      (globalProducts || []).forEach(p => { known[p.id] = true; });
+      const valid = [];
+      let skipped = 0;
+      for (const r of rows) {
+        const pid = String(r.product_id || '').trim();
+        r.product_id = pid;
+        r.unit_name = String(r.unit_name || '').trim().toLowerCase();
+        if (!pid || (Object.keys(known).length > 0 && !known[pid])) { skipped++; continue; }
+        if (!r.unit_name) { skipped++; continue; }
+        valid.push(r);
+      }
+      if (valid.length === 0) throw new Error('Tidak ada baris valid: product_id harus produk yang sudah terdaftar (mis. PRD-001). Baris ditolak: ' + skipped);
+      rows.length = 0; valid.forEach(r => rows.push(r));
+      Bridge._lastSkipped = skipped;
+    }
     else throw new Error('Simpan langsung hanya untuk tabel PRODUCTS / PRODUCT_UNITS');
     const res = await fetch(this.url + '/rest/v1/' + table + '?on_conflict=' + conflict, {
       method: 'POST', headers: headers, body: JSON.stringify(rows)

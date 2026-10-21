@@ -1,5 +1,5 @@
 {
-  "appVersion": "2.3",
-  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.3/KelontongPOS-v2.3.apk",
-  "notes": "Kolom barcode + scanner di Tambah Produk Baru; error simpan Database Raw tampil jelas"
+  "appVersion": "2.3.1",
+  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.3.1/KelontongPOS-v2.3.1.apk",
+  "notes": "Fix FK violation saat simpan PRODUCT_UNITS (filter baris tak valid + info baris dilewati)"
 }

@@ -516,6 +516,8 @@
             }).withFailureHandler(err => {
                 showToast("GAGAL simpan: " + (err && err.message ? err.message : err), "warning");
             }).saveRawSheetData(sheetName, matrix);
+            // toast info baris terlewat
+            setTimeout(() => { if (window.Bridge && window.Bridge._lastSkipped) { showToast(Bridge._lastSkipped + ' baris dilewati (product_id tidak dikenal/kosong)', 'info'); Bridge._lastSkipped = 0; } }, 1500);
         }
 
         function loadFinancialReport() {
