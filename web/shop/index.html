@@ -521,6 +521,43 @@ function checkPaymentStatus() {
 }
 function clearCart() { cart = []; saveCart(); updateCartBadge(); }
 
+// Countdown sisa waktu pembayaran di daftar "Akun & Pesanan" (tick global per detik)
+var orderCdTimer = null;
+function startOrderCountdowns() {
+  if (orderCdTimer) return;
+  orderCdTimer = setInterval(tickOrderCountdowns, 1000);
+  tickOrderCountdowns();
+}
+function tickOrderCountdowns() {
+  var els = document.querySelectorAll('.order-cd');
+  if (!els.length) { if (orderCdTimer) { clearInterval(orderCdTimer); orderCdTimer = null; } return; }
+  els.forEach(function(el) {
+    var dl = parseInt(el.getAttribute('data-deadline'), 10);
+    var s = Math.floor((dl - Date.now()) / 1000);
+    if (s <= 0) { loadMyOrders(); return; } // lewat batas -> refresh (server akan auto-cancel)
+    var m = Math.floor(s / 60), sec = s % 60;
+    el.textContent = m + ':' + (sec < 10 ? '0' : '') + sec;
+    if (s <= 300) el.parentElement.classList.add('text-red-600'), el.parentElement.classList.remove('text-amber-600');
+  });
+}
+// Refresh realtime riwayat pesanan: setiap 10 detik selagi modal terbuka,
+// sehingga status (Dibayar/Disiapkan/Dikirim) & efeknya update tanpa refresh manual.
+var ordersRefreshTimer = null;
+function startOrdersAutoRefresh() {
+  stopOrdersAutoRefresh();
+  ordersRefreshTimer = setInterval(function() {
+    var modal = document.getElementById('modal-account');
+    if (!modal || modal.classList.contains('hidden') || !session) { stopOrdersAutoRefresh(); return; }
+    rpc('shop_my_orders', { p_token: session.token }).then(function(res) {
+      if (!res.ok) return;
+      // render ulang hanya bila ada perubahan status (hemat & tidak mengganggu klik)
+      var sig = JSON.stringify((res.orders||[]).map(function(o){ return o.id + ':' + o.status; }));
+      if (sig !== window._ordersSig) { window._ordersSig = sig; renderMyOrders(res); }
+    }).catch(function(){});
+  }, 10000);
+}
+function stopOrdersAutoRefresh() { if (ordersRefreshTimer) { clearInterval(ordersRefreshTimer); ordersRefreshTimer = null; } }
+
 // ================== AUTH ==================
 function openAuth() {
   // tutup bubble akun dulu supaya tidak menimpa (issue #7)
@@ -575,6 +612,10 @@ function updateAccountUI() {
 function loadMyOrders() {
   rpc('shop_my_orders', { p_token: session.token }).then(function(res) {
     if (!res.ok) { showToast(res.message, 'error'); return; }
+    renderMyOrders(res);
+  }).catch(function(e) { showToast('Gagal: ' + e, 'error'); });
+}
+function renderMyOrders(res) {
     var statusBadge = { pending:'bg-amber-100 text-amber-700', paid:'bg-blue-100 text-blue-700', processing:'bg-indigo-100 text-indigo-700', ready:'bg-emerald-100 text-emerald-700', shipping:'bg-cyan-100 text-cyan-700', completed:'bg-slate-200 text-slate-600', cancelled:'bg-rose-100 text-rose-700' };
     var statusLabel = { pending:'Menunggu Bayar', paid:'Dibayar', processing:'Disiapkan', ready:'Siap Diambil', shipping:'Dikirim', completed:'Selesai', cancelled:'Batal' };
     var payMap = {};
@@ -586,17 +627,28 @@ function loadMyOrders() {
       var ful = o.fulfillment === 'delivery'
         ? '🛵 Kirim ' + slotLabel + ' ' + (o.delivery_date || '')
         : '🏪 Ambil di toko';
+      // countdown utk order pending non-COD dgn tagihan mayar (batas 1 jam sejak tagihan dibuat)
+      var pay = payMap[o.id];
+      var cdHtml = '';
+      if (o.status === 'pending' && o.payment_method !== 'cod' && pay && pay.mayar_link) {
+        var sisaDetik = Math.floor(60*60 - (Date.now() - new Date(pay.created_at).getTime())/1000);
+        if (sisaDetik > 0) {
+          cdHtml = '<p class="text-xs font-semibold text-amber-600 mt-1">⏳ Sisa waktu: <span class="order-cd" data-deadline="' + (new Date(pay.created_at).getTime() + 60*60*1000) + '">--:--</span></p>';
+        }
+      }
       return '<div class="border rounded-xl p-3">' +
         '<div class="flex justify-between items-center"><b class="text-sm">' + o.id + '</b>' +
         '<span class="text-xs font-bold px-2 py-1 rounded ' + (statusBadge[o.status] || '') + '">' + (statusLabel[o.status] || o.status) + '</span></div>' +
         '<p class="text-xs text-slate-400 mt-1">' + ful + '</p>' +
         '<p class="text-xs text-slate-500 mt-1">' + items.map(function(i){ return i.product_id + ' ' + i.unit + '×' + i.qty; }).join(', ') + '</p>' +
         '<p class="font-bold text-sm mt-1">' + fmtRp(o.total) + '</p>' +
+        cdHtml +
         (o.status === 'pending' && o.payment_method !== 'cod' ? '<button onclick="resumePayment(\'' + o.id + '\')" class="mt-2 w-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2.5 rounded-lg"><i class="fa-solid fa-credit-card mr-1"></i>Lanjutkan Pembayaran</button>' : '') +
         (o.status === 'pending' ? '<button onclick="cancelOrder(\'' + o.id + '\')" class="mt-2 text-xs font-bold text-rose-600">Batalkan</button>' : '') +
         '</div>';
     }).join('') : '<p class="text-sm text-slate-400">Belum ada pesanan.</p>';
-  }).catch(function(e) { showToast('Gagal: ' + e, 'error'); });
+    startOrderCountdowns();
+    startOrdersAutoRefresh();
 }
 function cancelOrder(oid) {
   if (!confirm('Batalkan order ' + oid + '?')) return;
