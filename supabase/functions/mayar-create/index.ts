@@ -76,7 +76,8 @@ Deno.serve(async (req: Request) => {
       return json({ ok: true, link: existing.mayar_link, paymentId: existing.id, amount: existing.amount, method })
     }
 
-    // Panggil Mayar Headless API
+    // Panggil Mayar Headless API (expiredAt WAJIB untuk endpoint v1)
+    const expiredAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
     const mayarRes = await fetch(MAYAR_BASE_URL + '/payment/create', {
       method: 'POST',
       headers: {
@@ -90,6 +91,7 @@ Deno.serve(async (req: Request) => {
         amount: order.total,
         description: 'Pesanan ' + orderId + ' — Toko Barokah Bu Tadi (' + (method === 'qris' ? 'QRIS' : 'Transfer') + ')',
         redirectUrl: SHOP_URL,
+        expiredAt: expiredAt,
       }),
     })
     const mayarText = await mayarRes.text()
@@ -100,7 +102,7 @@ Deno.serve(async (req: Request) => {
       return json({ ok: false, message: 'Gagal membuat tagihan pembayaran (Mayar).' }, 502)
     }
     const d = (mayarData.data ?? mayarData) as Record<string, unknown>
-    const txnId = String(d.id ?? d.transactionId ?? '')
+    const txnId = String(d.transactionId ?? d.transaction_id ?? d.id ?? '')
     const link = String(d.link ?? d.paymentUrl ?? d.url ?? '')
     if (!txnId || !link) {
       console.error('Mayar respons tak terduga', mayarText)
