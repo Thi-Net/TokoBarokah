@@ -99,7 +99,7 @@ Deno.serve(async (req: Request) => {
     try { mayarData = JSON.parse(mayarText) } catch { /* biarkan kosong */ }
     if (!mayarRes.ok) {
       console.error('Mayar error', mayarRes.status, mayarText)
-      return json({ ok: false, message: 'Gagal membuat tagihan pembayaran (Mayar).' }, 502)
+      return json({ ok: false, message: 'Gagal membuat tagihan pembayaran (Mayar) — status ' + mayarRes.status + ': ' + mayarText.slice(0, 200) }, 502)
     }
     const d = (mayarData.data ?? mayarData) as Record<string, unknown>
     const txnId = String(d.transactionId ?? d.transaction_id ?? d.id ?? '')
@@ -127,7 +127,7 @@ Deno.serve(async (req: Request) => {
     }
     await sb.from('orders').update({ payment_method: method, updated_at: new Date().toISOString() }).eq('id', orderId)
 
-    return json({ ok: true, paymentId: pay.id, amount: order.total, method, link })
+    return json({ ok: true, paymentId: pay.id, amount: order.total, method, link, txn: txnId })
   } catch (e) {
     console.error('mayar-create exception', e)
     return json({ ok: false, message: 'Kesalahan server pembayaran.' }, 500)

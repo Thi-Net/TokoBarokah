@@ -37,6 +37,7 @@ declare
   v_price numeric;
   v_stock numeric;
   v_jkt time;
+  v_buka boolean;
 begin
   if v_cid is null then
     return json_build_object('ok', false, 'message', 'Sesi tidak valid. Login ulang.');
@@ -45,10 +46,13 @@ begin
     update customers set name = p_name where id = v_cid;
   end if;
 
-  -- jam operasional 06.00-21.00 WIB
+  -- jam operasional 06.00-21.00 WIB: transaksi online TETAP bisa 24 jam.
+  -- yang dibatasi hanya slot 'langsung' (pesanan diproses segera):
+  -- hanya sah saat toko buka. Di luar jam, customer wajib pilih jadwal besok.
   v_jkt := (now() at time zone 'Asia/Jakarta')::time;
-  if v_jkt < '06:00' or v_jkt >= '21:00' then
-    return json_build_object('ok', false, 'message', 'Toko tutup (jam operasional 06.00–21.00 WIB). Silakan pesan kembali di jam buka.');
+  v_buka := (v_jkt >= '06:00' and v_jkt < '21:00');
+  if p_fulfillment = 'delivery' and coalesce(p_delivery_slot,'') = 'langsung' and not v_buka then
+    return json_build_object('ok', false, 'message', 'Toko sedang tutup (06.00–21.00 WIB). Pilih jadwal pengiriman besok.');
   end if;
 
   -- validasi fulfillment
