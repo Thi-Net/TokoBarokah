@@ -315,15 +315,17 @@ function fillDeliveryDates() {
   sel.onchange = fillDeliverySlots;
   fillDeliverySlots();
 }
-// slot jam real-time: untuk "hari ini", slot yang sudah lewat waktunya disembunyikan
+// slot jam real-time: untuk "hari ini", slot yang sudah lewat waktunya disembunyikan.
+// Aturan slot 'langsung': HANYA muncul jika jadwal = hari ini DAN toko sedang buka (06.00-21.00 WIB).
+// Di luar jam operasional, pilihan 'langsung' diganti "Toko sedang tutup" (pesanan diproses besok buka).
 function fillDeliverySlots() {
   var sel = document.getElementById('deliv-slot');
   var dateSel = document.getElementById('deliv-date');
   var isToday = dateSel.value === new Date().toISOString().slice(0,10);
   var now = new Date();
   var nowMin = now.getHours()*60 + now.getMinutes();
+  var shopOpen = nowMin >= 6*60 && nowMin < 21*60; // jam operasional 06.00-21.00
   var slots = [
-    { v: 'langsung', label: '⚡ Langsung setelah pembayaran', start: null },
     { v: '06.00-09.00', label: '06.00–09.00', start: 6*60 },
     { v: '09.00-12.00', label: '09.00–12.00', start: 9*60 },
     { v: '12.00-15.00', label: '12.00–15.00', start: 12*60 },
@@ -331,12 +333,20 @@ function fillDeliverySlots() {
     { v: '18.00-21.00', label: '18.00–21.00', start: 18*60 }
   ];
   var out = '';
+  if (isToday) {
+    // pilihan pertama: langsung (saat toko buka) atau info tutup (di luar jam)
+    out += shopOpen
+      ? '<option value="langsung">⚡ Langsung setelah pembayaran</option>'
+      : '<option value="06.00-09.00">🔒 Toko sedang tutup — diproses besok saat buka</option>';
+  }
   slots.forEach(function(s) {
-    if (isToday && s.start !== null && s.start <= nowMin) return; // slot lewat -> sembunyikan
+    if (isToday && s.start <= nowMin) return; // slot lewat -> sembunyikan
     out += '<option value="' + s.v + '">' + s.label + '</option>';
   });
-  if (!out) out = '<option value="langsung">⚡ Langsung setelah pembayaran</option>';
+  if (!out) out = '<option value="06.00-09.00">06.00–09.00</option>';
   sel.innerHTML = out;
+  // nilai default = pilihan pertama
+  sel.selectedIndex = 0;
 }
 function pickLocation() {
   if (!navigator.geolocation) { showToast('GPS tidak didukung browser ini', 'error'); return; }
