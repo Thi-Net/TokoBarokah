@@ -380,12 +380,23 @@ function fillDeliveryDates() {
   var sel = document.getElementById('deliv-date');
   var opts = [];
   var days = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
-  var now = new Date();
+  // tanggal "hari ini" harus WAKTU INDONESIA (WIB), bukan UTC —
+  // sebelum jam 07.00 WIB, toISOString() masih menghasilkan tanggal kemarin.
+  function wibDate(offsetDays) {
+    var now = new Date();
+    var wib = new Date(now.getTime() + (7 * 60 + now.getTimezoneOffset()) * 60000); // geser ke WIB
+    wib.setDate(wib.getDate() + (offsetDays || 0));
+    return wib;
+  }
+  function fmt(d) {
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+  var now = wibDate(0);
   var todayStr = now.toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'short' });
-  opts.push('<option value="' + now.toISOString().slice(0,10) + '">Hari ini — ' + todayStr + '</option>');
+  opts.push('<option value="' + fmt(now) + '">Hari ini — ' + todayStr + '</option>');
   for (var i = 1; i <= 6; i++) {
-    var d = new Date(now.getTime() + i*86400000);
-    opts.push('<option value="' + d.toISOString().slice(0,10) + '">' + days[d.getDay()] + ', ' + d.toLocaleDateString('id-ID',{day:'numeric',month:'short'}) + '</option>');
+    var d = wibDate(i);
+    opts.push('<option value="' + fmt(d) + '">' + days[d.getDay()] + ', ' + d.toLocaleDateString('id-ID',{day:'numeric',month:'short'}) + '</option>');
   }
   sel.innerHTML = opts.join('');
   sel.onchange = fillDeliverySlots;
@@ -397,7 +408,7 @@ function fillDeliveryDates() {
 function fillDeliverySlots() {
   var sel = document.getElementById('deliv-slot');
   var dateSel = document.getElementById('deliv-date');
-  var isToday = dateSel.value === new Date().toISOString().slice(0,10);
+  var isToday = dateSel.value === (function(){ var n=new Date(); var w=new Date(n.getTime() + (7*60 + n.getTimezoneOffset())*60000); return w.getFullYear() + '-' + String(w.getMonth()+1).padStart(2,'0') + '-' + String(w.getDate()).padStart(2,'0'); })();
   var now = new Date();
   var nowMin = now.getHours()*60 + now.getMinutes();
   var shopOpen = nowMin >= 6*60 && nowMin < 21*60; // jam operasional 06.00-21.00
