@@ -687,12 +687,44 @@
         function onScanSuccess(decodedText) {
             // Mode: scan untuk kolom barcode produk baru (tidak mencari produk)
             if (scannerTarget === 'newprod') {
+                const bc = decodedText.trim();
                 const bcEl = document.getElementById('new-prod-barcode');
-                const dupe = globalProducts.find(p => String(p.barcode || '') === decodedText.trim());
+                const dupe = globalProducts.find(p => String(p.barcode || '') === bc);
                 closeScanner();
-                if (bcEl) bcEl.value = decodedText.trim();
-                if (dupe) showToast('⚠ Barcode sudah dipakai produk: ' + dupe.name, 'warning');
-                else showToast('Barcode terisi: ' + decodedText.trim(), 'success');
+                if (bcEl) bcEl.value = bc;
+                if (dupe) {
+                    // Barcode sudah dipakai -> tampilkan produk & alur tambah satuan baru
+                    const prod = globalProducts.find(p => p.id === dupe.id);
+                    const units = prod && prod.units ? prod.units : [];
+                    const baseUnit = units.length ? units[0] : (prod && prod.baseUnit ? prod.baseUnit : '-');
+                    const msg = `Barcode sudah dipakai produk:\n\n- Nama: ${dupe.name}\n- ID: ${dupe.id}\n- Barcode: ${bc}\n- Satuan tersedia: ${units.join(', ') || '-'}\n\nApakah Anda ingin MENAMBAHKAN SATUAN BARU untuk produk ini?`;
+                    if (confirm(msg)) {
+                        const unitStr = prompt('Nama satuan baru (contoh: Lusin, Karton, Pak):', '');
+                        if (!unitStr || !unitStr.trim()) { alert('Batal: nama satuan kosong.'); return; }
+                        const unit = unitStr.trim();
+                        if (units.map(u => u.toLowerCase()).includes(unit.toLowerCase())) {
+                            alert(`DITOLAK: Satuan "${unit}" sudah ada untuk produk "${dupe.name}".`);
+                            return;
+                        }
+                        const convStr = prompt(`PENTING: Masukkan Nilai Konversi:\n1 ${unit} sama dengan berapa ${baseUnit}?`, '1');
+                        if (!convStr || isNaN(parseFloat(convStr))) { alert('Batal: Nilai konversi dibatalkan.'); return; }
+                        const priceStr = prompt(`Harga jual per ${unit} (Rp):`, '');
+                        const price = parseFloat(priceStr);
+                        if (isNaN(price) || price <= 0) { alert('Batal: Harga tidak valid.'); return; }
+                        showToast('Menyimpan satuan baru...', 'info');
+                        google.script.run.withSuccessHandler(r => {
+                            showToast(r && r.message ? r.message : 'Satuan baru tersimpan', 'success');
+                            document.getElementById('new-prod-barcode').value = '';
+                            loadProductsData();
+                        }).withFailureHandler(err => {
+                            showToast('GAGAL: ' + (err && err.message ? err.message : err), 'warning');
+                        }).addNewUnitToProduct({
+                            productId: dupe.id, unitName: unit, conversionRate: parseFloat(convStr), sellingPrice: price
+                        });
+                    }
+                } else {
+                    showToast('Barcode terisi: ' + bc, 'success');
+                }
                 return;
             }
             // cari produk berdasarkan barcode ATAU id
