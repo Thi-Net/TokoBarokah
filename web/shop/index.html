@@ -421,19 +421,20 @@ function fillDeliverySlots() {
   ];
   var out = '';
   if (isToday) {
-    // pilihan pertama: langsung (saat toko buka) atau info tutup (di luar jam)
+    // pilihan pertama: langsung (saat toko buka) atau opsi non-pilih (di luar jam)
     out += shopOpen
       ? '<option value="langsung">⚡ Langsung setelah pembayaran</option>'
-      : '<option value="06.00-09.00">🔒 Toko sedang tutup — diproses besok saat buka</option>';
+      : '<option value="tutup" disabled selected>🔒 Toko sedang tutup — pilih slot jam di bawah</option>';
   }
   slots.forEach(function(s) {
     if (isToday && s.start <= nowMin) return; // slot lewat -> sembunyikan
     out += '<option value="' + s.v + '">' + s.label + '</option>';
   });
-  if (!out) out = '<option value="06.00-09.00">06.00–09.00</option>';
   sel.innerHTML = out;
-  // nilai default = pilihan pertama
-  sel.selectedIndex = 0;
+  // nilai default: pilihan valid pertama (lewati opsi "tutup" yang disabled)
+  for (var i2 = 0; i2 < sel.options.length; i2++) {
+    if (!sel.options[i2].disabled) { sel.selectedIndex = i2; break; }
+  }
 }
 function pickLocation() {
   if (!navigator.geolocation) { showToast('GPS tidak didukung browser ini', 'error'); return; }
@@ -471,7 +472,9 @@ function checkout() {
     if (!addr) { showToast('Alamat lengkap wajib diisi untuk pengiriman', 'error'); return; }
     payload.p_address = addr;
     payload.p_delivery_date = document.getElementById('deliv-date').value;
-    payload.p_delivery_slot = document.getElementById('deliv-slot').value;
+    var slotVal = document.getElementById('deliv-slot').value;
+    if (!slotVal || slotVal === 'tutup') { showToast('Toko sedang tutup — pilih slot jam pengiriman dulu.', 'error'); return; }
+    payload.p_delivery_slot = slotVal;
     if (geoPos) { payload.p_lat = geoPos.lat; payload.p_lng = geoPos.lng; }
   }
   var btn = document.getElementById('btn-checkout');
