@@ -693,6 +693,7 @@ function resumePayment(oid) {
       '<p class="text-slate-500">Selesaikan pembayaran sebelum waktu habis, pesanan otomatis dibatalkan setelahnya.</p>' +
       '<p class="text-slate-400 text-xs">Waktu dihitung sejak tagihan dibuat (batas 1 jam).</p>';
     if (sisa !== undefined) startCheckoutCountdown(sisa * 60);
+    closeModal('modal-account'); // tutup Akun & Pesanan agar tidak menumpuk dgn popup pembayaran
     openPay(oid, res.amount);
     // langsung buka frame Mayar
     goMayar();
