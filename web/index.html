@@ -1202,7 +1202,7 @@ let epOrig = null; // {id, name, barcode, units: [{unit, price, hpp}]}
 function openEditProduct(pid) {
   const p = (globalProducts || []).find(x => x.id === pid);
   if (!p) { showToast('Data produk tidak ditemukan — muat ulang koneksi.', 'warning'); return; }
-  epOrig = { id: p.id, name: p.name, barcode: p.barcode || '', units: (p.units || []).map(u => ({ unit: u, unitOrig: u, price: (p.prices && p.prices[u]) || 0, priceOrig: (p.prices && p.prices[u]) || 0 })) };
+  epOrig = { id: p.id, name: p.name, baseUnit: p.baseUnit || '', barcode: p.barcode || '', units: (p.units || []).map(u => ({ unit: u, unitOrig: u, price: (p.prices && p.prices[u]) || 0, priceOrig: (p.prices && p.prices[u]) || 0 })) };
   document.getElementById('ep-id').value = p.id;
   document.getElementById('ep-name').value = p.name;
   document.getElementById('ep-barcode').value = epOrig.barcode;
@@ -1219,7 +1219,8 @@ function renderEpUnits() {
   const box = document.getElementById('ep-units');
   box.innerHTML = (epOrig.units || []).map((u, i) => `
     <div class="flex items-center gap-2 bg-slate-50 border rounded-xl p-2" data-idx="${i}">
-      <input value="${u.unit}" onchange="epRename(${i}, this.value)" class="flex-1 border rounded-lg px-2 py-1.5 text-sm" placeholder="Nama satuan (mis. Pcs)">
+      <input value="${u.unit}" ${u.isNew ? 'readonly' : ''} onchange="epRename(${i}, this.value)" class="flex-1 border rounded-lg px-2 py-1.5 text-sm" placeholder="Nama satuan (mis. Pcs)">
+      ${u.isNew && u.conversion ? `<span class="text-[10px] font-bold text-emerald-700 whitespace-nowrap" title="Nilai konversi">1 ${u.unit} = ${u.conversion} ${epOrig.baseUnit || ''}</span>` : ''}
       <span class="text-[10px] text-slate-400 font-bold">Harga:</span>
       <input type="number" value="${u.price}" onchange="epPrice(${i}, this.value)" class="border rounded-lg px-2 py-1.5 text-sm w-24">
       <button onclick="epRemoveRow(${i})" title="Hapus satuan" class="text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg px-2 py-1.5"><i class="fa-solid fa-trash-can"></i></button>
@@ -1228,11 +1229,23 @@ function renderEpUnits() {
 function epRename(i, val) { if (epOrig.units[i]) epOrig.units[i].unit = val.trim(); }
 function epPrice(i, val) { if (epOrig.units[i]) epOrig.units[i].price = parseFloat(val) || 0; }
 function epAddUnitRow() {
-  epOrig.units.push({ unit: '', price: 0, isNew: true });
+  const base = (globalProducts.find(x => x.id === epOrig.id) || {}).baseUnit || '';
+  const unitStr = prompt('Nama satuan baru (contoh: Lusin, Karton, Pak):', '');
+  if (!unitStr || !unitStr.trim()) return;
+  const unit = unitStr.trim();
+  if (epOrig.units.map(u => (u.unit || '').toLowerCase()).includes(unit.toLowerCase())) {
+    showToast('Satuan "' + unit + '" sudah ada.', 'warning'); return;
+  }
+  let conv = 1;
+  if (base) {
+    const convStr = prompt('PENTING: Nilai Konversi\\n1 ' + unit + ' sama dengan berapa ' + base + '?', '1');
+    if (convStr === null) return;
+    conv = parseFloat(convStr);
+    if (isNaN(conv) || conv <= 0) { showToast('Konversi tidak valid — dibatalkan.', 'warning'); return; }
+  }
+  epOrig.units.push({ unit, unitOrig: unit, price: 0, priceOrig: 0, isNew: true, conversion: conv });
   renderEpUnits();
-  // fokus ke input satuan baru terakhir
-  const rows = document.querySelectorAll('#ep-units > div');
-  if (rows.length) rows[rows.length - 1].querySelector('input').focus();
+  showToast('Satuan "' + unit + '" ditambahkan (1 ' + unit + ' = ' + conv + ' ' + (base || '?') + '). Isi harga lalu Simpan.', 'info');
 }
 function epRemoveRow(i) {
   const u = epOrig.units[i];
@@ -1253,7 +1266,7 @@ async function saveEditProduct() {
     if (seen[unit]) { showToast('Satuan "' + unit + '" dobel.', 'warning'); return; }
     seen[unit] = true;
     if (u.remove) unitsPayload.push({ action: 'remove', unit: u.unitOrig });
-    else if (u.isNew) unitsPayload.push({ action: 'add', unit, price: u.price });
+    else if (u.isNew) unitsPayload.push({ action: 'add', unit, price: u.price, conversion: u.conversion || 1 });
     else if (unit !== u.unitOrig) unitsPayload.push({ action: 'rename', from: u.unitOrig, to: unit });
     else if (u.price !== u.priceOrig) unitsPayload.push({ action: 'setprice', unit, price: u.price });
   }
