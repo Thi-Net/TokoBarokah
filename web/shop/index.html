@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Toko Barokah — Belanja Online</title>
+<script src="../libs/tailwind.js"></script>
+<link rel="stylesheet" href="../libs/fontawesome.css">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap');
+  body { font-family: 'Rubik', -apple-system, 'Segoe UI', Roboto, sans-serif; }
+  button { transition: transform .15s ease, background .15s ease; }
+  button:active { transform: scale(.97); }
+  .fade { animation: fade .2s ease-in-out; }
+  @keyframes fade { from { opacity: 0; transform: translateY(4px);} to { opacity:1; transform:none;} }
+</style>
+</head>
+<body class="bg-slate-100 text-slate-800">
+<!-- TOAST -->
+<div id="toast" class="toast fixed top-5 right-5 z-[99] bg-slate-900 text-white px-5 py-3 rounded-xl shadow-2xl hidden text-sm font-medium"></div>
+
+<!-- HEADER -->
+<header class="bg-emerald-600 text-white sticky top-0 z-40 shadow-lg">
+  <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+    <h1 class="font-extrabold text-lg"><i class="fa-solid fa-store mr-2"></i>Toko Barokah</h1>
+    <div class="flex items-center gap-2">
+      <button id="btn-cart" onclick="openCart()" class="relative bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-bold px-4 py-2 rounded-xl text-sm">
+        <i class="fa-solid fa-cart-shopping mr-1"></i>Keranjang
+        <span id="cart-badge" class="hidden absolute -top-2 -right-2 bg-rose-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">0</span>
+      </button>
+      <button id="btn-account" onclick="openAccount()" class="bg-emerald-700 hover:bg-emerald-600 font-bold px-4 py-2 rounded-xl text-sm"><i class="fa-solid fa-user mr-1"></i><span id="account-label">Masuk</span></button>
+    </div>
+  </div>
+</header>
+
+<!-- CATALOG -->
+<main class="max-w-3xl mx-auto px-4 py-4 pb-32">
+  <input id="search" oninput="renderCatalog()" type="search" placeholder="Cari produk..." class="w-full bg-white border border-slate-200 focus:border-emerald-500 rounded-xl px-4 py-3 text-sm mb-4">
+  <div id="catalog" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+</main>
+
+<!-- MODAL LOGIN/OTP -->
+<div id="modal-auth" class="fixed inset-0 bg-slate-900/70 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 fade">
+    <div class="flex justify-between items-center mb-4">
+      <h2 id="auth-title" class="font-extrabold text-lg">Masuk / Daftar</h2>
+      <button onclick="closeModal('modal-auth')" class="text-slate-400 hover:text-rose-500 text-xl"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <!-- step 1: phone -->
+    <div id="auth-step-phone">
+      <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nomor HP / WhatsApp</label>
+      <input id="auth-phone" type="tel" inputmode="numeric" placeholder="08xxxxxxxxxx" class="w-full border border-slate-300 focus:border-emerald-500 rounded-xl px-4 py-3 mb-3">
+      <button onclick="requestOtp()" id="btn-otp" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3 rounded-xl">Kirim OTP</button>
+    </div>
+    <!-- step 2: otp -->
+    <div id="auth-step-otp" class="hidden">
+      <p class="text-sm text-slate-600 mb-2">Masukkan 6 digit OTP. <span class="text-xs">(Mode demo: OTP tampil setelah kirim)</span></p>
+      <input id="auth-otp" type="numeric" inputmode="numeric" maxlength="6" placeholder="______" class="w-full border border-slate-300 focus:border-emerald-500 rounded-xl px-4 py-3 mb-2 text-center text-xl tracking-widest font-bold">
+      <p id="otp-demo" class="hidden text-xs text-emerald-700 font-bold mb-2"></p>
+      <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nama (opsional, utk pelanggan baru)</label>
+      <input id="auth-name" type="text" placeholder="Nama kamu" class="w-full border border-slate-300 focus:border-emerald-500 rounded-xl px-4 py-3 mb-3">
+      <button onclick="verifyOtp()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3 rounded-xl">Verifikasi & Masuk</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL KERANJANG -->
+<div id="modal-cart" class="fixed inset-0 bg-slate-900/70 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 max-h-[85vh] overflow-y-auto fade">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="font-extrabold text-lg">Keranjang</h2>
+      <button onclick="closeModal('modal-cart')" class="text-slate-400 hover:text-rose-500 text-xl"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div id="cart-items" class="space-y-2 mb-4"></div>
+    <div class="border-t pt-3 mb-3">
+      <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Catatan (opsional)</label>
+      <input id="order-note" type="text" placeholder="Contoh: tolong yang dong sabun 2" class="w-full border border-slate-300 rounded-xl px-4 py-2 text-sm">
+    </div>
+    <div class="flex justify-between font-extrabold text-lg mb-4"><span>Total</span><span id="cart-total">Rp0</span></div>
+    <button onclick="checkout()" id="btn-checkout" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3 rounded-xl">Checkout</button>
+  </div>
+</div>
+
+<!-- MODAL PEMBAYARAN (DEMO) -->
+<div id="modal-pay" class="fixed inset-0 bg-slate-900/70 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 max-h-[85vh] overflow-y-auto fade">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="font-extrabold text-lg">Pembayaran</h2>
+      <button onclick="closeModal('modal-pay')" class="text-slate-400 hover:text-rose-500 text-xl"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div id="pay-choices" class="grid grid-cols-2 gap-3 mb-4">
+      <button onclick="createPayment('transfer')" class="bg-blue-50 border-2 border-blue-300 hover:border-blue-500 rounded-xl py-4 font-bold text-blue-700"><i class="fa-solid fa-building-columns mr-2"></i>Transfer</button>
+      <button onclick="createPayment('qris')" class="bg-purple-50 border-2 border-purple-300 hover:border-purple-500 rounded-xl py-4 font-bold text-purple-700"><i class="fa-solid fa-qrcode mr-2"></i>QRIS</button>
+    </div>
+    <div id="pay-detail" class="hidden border rounded-xl p-4 bg-slate-50">
+      <div id="pay-info" class="text-sm space-y-1 mb-4"></div>
+      <p class="text-xs text-slate-500 mb-3"><i class="fa-solid fa-circle-info mr-1"></i>Mode DEMO — tidak ada uang nyata. Klik simulasi untuk menandai lunas.</p>
+      <button onclick="simulatePay()" id="btn-simpay" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3 rounded-xl">Simulasikan Bayar (Demo)</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL AKUN / PESANAN -->
+<div id="modal-account" class="fixed inset-0 bg-slate-900/70 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 max-h-[85vh] overflow-y-auto fade">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="font-extrabold text-lg">Akun & Pesanan</h2>
+      <button onclick="closeModal('modal-account')" class="text-slate-400 hover:text-rose-500 text-xl"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div id="account-logged-in" class="hidden">
+      <p class="text-sm mb-3">Halo, <b id="account-name"></b> <span id="account-phone" class="text-slate-400"></span></p>
+      <h3 class="font-bold text-sm uppercase text-slate-500 mb-2">Riwayat Pesanan</h3>
+      <div id="my-orders" class="space-y-3"></div>
+      <button onclick="logout()" class="mt-4 w-full bg-rose-50 text-rose-600 border border-rose-200 font-bold py-3 rounded-xl">Keluar</button>
+    </div>
+    <div id="account-guest">
+      <p class="text-sm text-slate-600 mb-4">Belum masuk. Masuk dengan nomor HP untuk melihat riwayat pesanan dan checkout.</p>
+      <button onclick="openAuth()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3 rounded-xl">Masuk / Daftar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ================== KONFIG ==================
+var SB_URL = localStorage.getItem('kpos_sb_url') || 'https://zosdcuiulgpjevgbyquw.supabase.co';
+var SB_KEY = localStorage.getItem('kpos_sb_key') || 'sb_publishable_ZyeF0KWUjAuH9quXYELRuw_HlDDlBo0';
+var SESSION_KEY = 'shop_session_v1';
+
+var session = null;
+try { session = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch(e) { session = null; }
+var catalog = [];
+var cart = [];
+var currentPayment = null;
+var pendingPhone = '';
+
+function rpc(fn, args) {
+  return fetch(SB_URL + '/rest/v1/rpc/' + fn, {
+    method: 'POST',
+    headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify(args || {})
+  }).then(function(r) { return r.json(); });
+}
+function fmtRp(v) { return 'Rp' + Number(v || 0).toLocaleString('id-ID'); }
+function showToast(msg, type) {
+  var t = document.getElementById('toast');
+  t.innerText = msg;
+  t.className = 'toast fixed top-5 right-5 z-[99] px-5 py-3 rounded-xl shadow-2xl text-sm font-medium ' +
+    (type === 'error' ? 'bg-rose-600' : type === 'info' ? 'bg-slate-900' : 'bg-emerald-600') + ' text-white';
+  t.classList.remove('hidden');
+  clearTimeout(window._tt); window._tt = setTimeout(function(){ t.classList.add('hidden'); }, 3500);
+}
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+
+// ================== CATALOG ==================
+function loadCatalog() {
+  rpc('shop_catalog').then(function(res) {
+    catalog = (res && res.length !== undefined) ? res : [];
+    renderCatalog();
+  }).catch(function(e) { showToast('Gagal memuat katalog: ' + e, 'error'); });
+}
+function renderCatalog() {
+  var q = (document.getElementById('search').value || '').toLowerCase();
+  var box = document.getElementById('catalog');
+  var list = catalog.filter(function(p){ return !q || p.name.toLowerCase().indexOf(q) >= 0; });
+  if (!list.length) { box.innerHTML = '<p class="text-slate-400 text-sm col-span-full text-center py-8">Tidak ada produk.</p>'; return; }
+  box.innerHTML = list.map(function(p) {
+    var firstUnit = (p.units && p.units[0]) || p.baseUnit;
+    var price = p.prices ? (p.prices[firstUnit] || Object.values(p.prices)[0] || 0) : 0;
+    var unitOpts = (p.units || []).map(function(u) {
+      return '<option value="' + u + '"' + (u === firstUnit ? ' selected' : '') + '>' + u + ' — ' + fmtRp(p.prices ? p.prices[u] : 0) + '</option>';
+    }).join('');
+    var out = Number(p.stock || 0) <= 0;
+    return '<div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 fade">' +
+      '<p class="font-bold text-sm leading-snug">' + p.name + '</p>' +
+      '<p class="text-xs text-slate-400 mb-2">' + p.category + ' • Stok: ' + p.stock + ' ' + p.baseUnit + '</p>' +
+      (out ? '<p class="text-xs font-bold text-rose-500 mb-2">Stok habis</p>' :
+        '<div class="flex gap-2">' +
+        '<select id="unit-' + p.id + '" class="flex-1 border border-slate-200 rounded-lg px-2 py-2 text-xs">' + unitOpts + '</select>' +
+        '<button onclick="addToCart(\'' + p.id + '\')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-2 rounded-lg text-xs"><i class="fa-solid fa-plus"></i></button>' +
+        '</div>') +
+      '</div>';
+  }).join('');
+}
+function addToCart(pid) {
+  var p = catalog.find(function(x){ return x.id === pid; });
+  var unit = document.getElementById('unit-' + pid).value;
+  var price = p.prices[unit] || 0;
+  var line = cart.find(function(l){ return l.productId === pid && l.unit === unit; });
+  if (line) line.qty += 1; else cart.push({ productId: pid, name: p.name, unit: unit, price: price, qty: 1 });
+  updateCartBadge(); showToast(p.name + ' (' + unit + ') masuk keranjang', 'ok');
+}
+function updateCartBadge() {
+  var n = cart.reduce(function(a, l){ return a + l.qty; }, 0);
+  var b = document.getElementById('cart-badge');
+  b.innerText = n; b.classList.toggle('hidden', n === 0);
+}
+
+// ================== CART ==================
+function openCart() { renderCart(); openModal('modal-cart'); }
+function renderCart() {
+  var box = document.getElementById('cart-items');
+  if (!cart.length) { box.innerHTML = '<p class="text-slate-400 text-sm text-center py-4">Keranjang kosong.</p>'; }
+  else box.innerHTML = cart.map(function(l, i) {
+    return '<div class="flex items-center justify-between bg-slate-50 rounded-xl px-3 py-2">' +
+      '<div class="text-sm"><b>' + l.name + '</b> <span class="text-slate-400 text-xs">' + l.unit + '</span>' +
+      '<p class="text-xs text-slate-500">' + fmtRp(l.price) + ' × ' + l.qty + '</p></div>' +
+      '<div class="flex items-center gap-2">' +
+      '<button onclick="chQty(' + i + ',-1)" class="w-8 h-8 bg-slate-200 rounded-lg font-bold">−</button>' +
+      '<span class="font-bold w-6 text-center">' + l.qty + '</span>' +
+      '<button onclick="chQty(' + i + ',1)" class="w-8 h-8 bg-emerald-100 text-emerald-700 rounded-lg font-bold">+</button></div></div>';
+  }).join('');
+  document.getElementById('cart-total').innerText = fmtRp(cart.reduce(function(a, l){ return a + l.price * l.qty; }, 0));
+}
+function chQty(i, d) {
+  cart[i].qty += d;
+  if (cart[i].qty <= 0) cart.splice(i, 1);
+  updateCartBadge(); renderCart();
+}
+
+// ================== CHECKOUT ==================
+function checkout() {
+  if (!session) { closeAll(); openAuth(); return; }
+  if (!cart.length) { showToast('Keranjang kosong', 'error'); return; }
+  var btn = document.getElementById('btn-checkout');
+  btn.disabled = true; btn.innerText = 'Mengirim...';
+  rpc('shop_create_order', {
+    p_token: session.token,
+    p_items: JSON.stringify(cart.map(function(l){ return { productId: l.productId, unit: l.unit, qty: l.qty }; })),
+    p_note: document.getElementById('order-note').value || '',
+    p_name: session.name || ''
+  }).then(function(res) {
+    btn.disabled = false; btn.innerText = 'Checkout';
+    if (!res.ok) { showToast(res.message || 'Gagal', 'error'); return; }
+    cart = []; updateCartBadge(); closeAll();
+    currentOrder = { id: res.orderId, total: res.total };
+    openPay(res.orderId, res.total);
+  }).catch(function(e) { btn.disabled = false; btn.innerText = 'Checkout'; showToast('Gagal: ' + e, 'error'); });
+}
+
+// ================== PAYMENT DEMO ==================
+var currentOrder = null;
+function openPay(orderId, total) {
+  currentOrder = { id: orderId, total: total };
+  document.getElementById('pay-choices').classList.remove('hidden');
+  document.getElementById('pay-detail').classList.add('hidden');
+  openModal('modal-pay');
+}
+function createPayment(method) {
+  rpc('shop_create_payment', { p_token: session.token, p_order_id: currentOrder.id, p_method: method })
+  .then(function(res) {
+    if (!res.ok) { showToast(res.message, 'error'); return; }
+    currentPayment = res;
+    document.getElementById('pay-choices').classList.add('hidden');
+    document.getElementById('pay-detail').classList.remove('hidden');
+    document.getElementById('pay-info').innerHTML =
+      '<p><b>Order:</b> ' + res.paymentId ? '' : '' + '</p>' +
+      '<p><b>Metode:</b> ' + (method === 'qris' ? 'QRIS (demo)' : 'Transfer bank (demo)') + '</p>' +
+      '<p><b>Nomor VA:</b> <span class="font-mono font-bold">' + res.vaNumber + '</span></p>' +
+      '<p><b>Nominal:</b> ' + fmtRp(res.amount) + '</p>';
+  }).catch(function(e) { showToast('Gagal: ' + e, 'error'); });
+}
+function simulatePay() {
+  var btn = document.getElementById('btn-simpay');
+  btn.disabled = true; btn.innerText = 'Memproses...';
+  rpc('shop_pay_demo', { p_token: session.token, p_payment_id: currentPayment.paymentId })
+  .then(function(res) {
+    btn.disabled = false; btn.innerText = 'Simulasikan Bayar (Demo)';
+    if (!res.ok) { showToast(res.message, 'error'); return; }
+    closeModal('modal-pay');
+    showToast('✓ Pembayaran demo berhasil — order LUNAS, menunggu dikonfirmasi toko', 'ok');
+  }).catch(function(e) { btn.disabled = false; btn.innerText = 'Simulasikan Bayar (Demo)'; showToast('Gagal: ' + e, 'error'); });
+}
+
+// ================== AUTH ==================
+function openAuth() {
+  document.getElementById('auth-step-phone').classList.remove('hidden');
+  document.getElementById('auth-step-otp').classList.add('hidden');
+  openModal('modal-auth');
+}
+function closeAll() {
+  ['modal-auth','modal-cart','modal-pay','modal-account'].forEach(closeModal);
+}
+function requestOtp() {
+  var phone = (document.getElementById('auth-phone').value || '').trim();
+  if (phone.replace(/\D/g,'').length < 9) { showToast('Nomor HP tidak valid', 'error'); return; }
+  pendingPhone = phone;
+  var btn = document.getElementById('btn-otp');
+  btn.disabled = true; btn.innerText = 'Mengirim...';
+  rpc('shop_request_otp', { p_phone: phone }).then(function(res) {
+    btn.disabled = false; btn.innerText = 'Kirim OTP';
+    if (!res.ok) { showToast(res.message, 'error'); return; }
+    document.getElementById('auth-step-phone').classList.add('hidden');
+    document.getElementById('auth-step-otp').classList.remove('hidden');
+    var demo = document.getElementById('otp-demo');
+    demo.classList.remove('hidden');
+    demo.innerText = 'OTP demo: ' + res.otp;
+  }).catch(function(e) { btn.disabled = false; btn.innerText = 'Kirim OTP'; showToast('Gagal: ' + e, 'error'); });
+}
+function verifyOtp() {
+  var otp = (document.getElementById('auth-otp').value || '').trim();
+  var name = (document.getElementById('auth-name').value || '').trim();
+  rpc('shop_verify_otp', { p_phone: pendingPhone, p_otp: otp, p_name: name }).then(function(res) {
+    if (!res.ok) { showToast(res.message, 'error'); return; }
+    session = { token: res.token, customerId: res.customerId, phone: pendingPhone, name: res.name };
+    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    closeModal('modal-auth'); updateAccountUI(); showToast('Masuk sebagai ' + (res.name || res.customerId), 'ok');
+  }).catch(function(e) { showToast('Gagal: ' + e, 'error'); });
+}
+function openAccount() {
+  updateAccountUI();
+  if (session) loadMyOrders();
+  openModal('modal-account');
+}
+function updateAccountUI() {
+  document.getElementById('account-label').innerText = session ? 'Akun' : 'Masuk';
+  document.getElementById('account-logged-in').classList.toggle('hidden', !session);
+  document.getElementById('account-guest').classList.toggle('hidden', !!session);
+  if (session) {
+    document.getElementById('account-name').innerText = session.name || session.customerId;
+    document.getElementById('account-phone').innerText = session.phone;
+  }
+}
+function loadMyOrders() {
+  rpc('shop_my_orders', { p_token: session.token }).then(function(res) {
+    if (!res.ok) { showToast(res.message, 'error'); return; }
+    var statusBadge = { pending:'bg-amber-100 text-amber-700', paid:'bg-blue-100 text-blue-700', processing:'bg-indigo-100 text-indigo-700', ready:'bg-emerald-100 text-emerald-700', completed:'bg-slate-200 text-slate-600', cancelled:'bg-rose-100 text-rose-700' };
+    document.getElementById('my-orders').innerHTML = res.orders.length ? res.orders.map(function(o) {
+      var items = (res.items || []).filter(function(i){ return i.order_id === o.id; });
+      return '<div class="border rounded-xl p-3">' +
+        '<div class="flex justify-between items-center"><b class="text-sm">' + o.id + '</b>' +
+        '<span class="text-xs font-bold px-2 py-1 rounded ' + (statusBadge[o.status] || '') + '">' + o.status + '</span></div>' +
+        '<p class="text-xs text-slate-500 mt-1">' + items.map(function(i){ return i.product_id + ' ' + i.unit + '×' + i.qty; }).join(', ') + '</p>' +
+        '<p class="font-bold text-sm mt-1">' + fmtRp(o.total) + '</p>' +
+        (o.status === 'pending' ? '<button onclick="cancelOrder(\'' + o.id + '\')" class="mt-2 text-xs font-bold text-rose-600">Batalkan</button>' : '') +
+        '</div>';
+    }).join('') : '<p class="text-sm text-slate-400">Belum ada pesanan.</p>';
+  }).catch(function(e) { showToast('Gagal: ' + e, 'error'); });
+}
+function cancelOrder(oid) {
+  if (!confirm('Batalkan order ' + oid + '?')) return;
+  rpc('shop_cancel_order', { p_token: session.token, p_order_id: oid }).then(function(res) {
+    showToast(res.message || '', res.ok ? 'ok' : 'error');
+    loadMyOrders();
+  });
+}
+function logout() {
+  session = null; localStorage.removeItem(SESSION_KEY);
+  updateAccountUI(); closeModal('modal-account'); showToast('Keluar.', 'info');
+}
+
+// init
+updateAccountUI();
+loadCatalog();
+</script>
+</body>
+</html>
