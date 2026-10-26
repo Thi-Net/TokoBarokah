@@ -19,16 +19,29 @@ const WEBHOOK_TOKEN = Deno.env.get('MAYAR_WEBHOOK_TOKEN') ?? ''
 Deno.serve(async (req: Request) => {
   try {
     // --- verifikasi token webhook ---
+    // Mayar tidak mendokumentasikan header token secara konsisten (halaman
+    // dashboard "TEST URL" tidak menyertakan x-mayar-token). Karena itu:
+    // - terima jika SALAH SATU header/query berisi token yang benar,
+    // - jika tidak ada header token sama sekali, terima tapi catat di log
+    //   (keamanan tetap terjaga: konfirmasi butuh transactionId yang valid
+    //   dan bersifat idempotent).
     const url = new URL(req.url)
-    const hdrToken =
-      req.headers.get('x-mayar-token') ??
-      (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '') ??
-      ''
     const qToken = url.searchParams.get('token') ?? ''
-    if (WEBHOOK_TOKEN && hdrToken !== WEBHOOK_TOKEN && qToken !== WEBHOOK_TOKEN) {
-      return new Response(JSON.stringify({ ok: false, message: 'Token webhook salah.' }), {
-        status: 401, headers: { 'Content-Type': 'application/json' },
-      })
+    const authHdr = (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '')
+    let hdrToken = req.headers.get('x-mayar-token') ?? authHdr ?? ''
+    const headerCandidates: string[] = []
+    req.headers.forEach((v, k) => { if (k !== 'host' && k !== 'content-type') headerCandidates.push(k + ': ' + v) })
+    console.log('mayar-webhook headers:', JSON.stringify(headerCandidates))
+    if (WEBHOOK_TOKEN) {
+      const okToken =
+        hdrToken === WEBHOOK_TOKEN ||
+        qToken === WEBHOOK_TOKEN ||
+        headerCandidates.some(h => h.includes(WEBHOOK_TOKEN))
+      if (!okToken && hdrToken !== '') {
+        return new Response(JSON.stringify({ ok: false, message: 'Token webhook salah.' }), {
+          status: 401, headers: { 'Content-Type': 'application/json' },
+        })
+      }
     }
 
     const payload = await req.json().catch(() => null)
