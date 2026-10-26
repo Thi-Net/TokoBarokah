@@ -125,6 +125,10 @@
     </div>
     <div id="pay-detail" class="hidden border rounded-xl p-4 bg-slate-50">
       <div id="pay-info" class="text-sm space-y-1 mb-4"></div>
+      <div id="mayar-frame-wrap" class="hidden">
+        <iframe id="mayar-frame" class="w-full rounded-xl border border-slate-200" style="height:480px" title="Pembayaran Mayar"></iframe>
+        <p class="text-xs text-slate-500 mt-2"><i class="fa-solid fa-circle-info mr-1"></i>Selesaikan pembayaran di layar ini. Setelah berhasil, pesanan otomatis terkonfirmasi (status & keranjang diperbarui otomatis). Kalau halaman tidak tampil, <a id="mayar-open" href="#" target="_blank" class="underline font-semibold">buka di tab baru</a>.</p>
+      </div>
       <button onclick="goMayar()" id="btn-mayar" class="hidden w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3 rounded-xl">Bayar Sekarang</button>
       <p class="text-xs text-slate-500 mb-3 mt-2"><i class="fa-solid fa-circle-info mr-1"></i>Kamu akan diarahkan ke halaman pembayaran aman (Mayar). Status pesanan otomatis diperbarui setelah pembayaran berhasil.</p>
     </div>
@@ -186,7 +190,7 @@ function showToast(msg, type) {
   t.classList.remove('hidden');
   clearTimeout(window._tt); window._tt = setTimeout(function(){ t.classList.add('hidden'); }, 3500);
 }
-function closeModal(id) { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); }
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); if (id === 'modal-pay') resetPayModal(); }
 function openModal(id) { document.getElementById(id).classList.remove('hidden'); document.getElementById(id).classList.add('flex'); }
 function saveCart() { try { localStorage.setItem(CART_KEY, JSON.stringify(cart)); } catch(e){} }
 
@@ -430,8 +434,31 @@ function createPayment(method) {
 }
 function goMayar() {
   if (!currentPayment || !currentPayment.mayarLink) { showToast('Tagihan belum dibuat', 'error'); return; }
-  window.open(currentPayment.mayarLink, '_blank');
+  // Tampilkan halaman Mayar di dalam popup (iframe) — tanpa buka tab baru.
+  var wrap = document.getElementById('mayar-frame-wrap');
+  var frame = document.getElementById('mayar-frame');
+  frame.src = currentPayment.mayarLink;
+  document.getElementById('mayar-open').href = currentPayment.mayarLink; // fallback manual
+  wrap.classList.remove('hidden');
+  document.getElementById('btn-mayar').classList.add('hidden');
+  document.getElementById('pay-info').classList.add('hidden');
   startPaymentPolling();
+}
+function resetPayModal() {
+  var wrap = document.getElementById('mayar-frame-wrap');
+  if (wrap) {
+    wrap.classList.add('hidden');
+    document.getElementById('mayar-frame').src = 'about:blank';
+  }
+  var pi = document.getElementById('pay-info');
+  if (pi) pi.classList.remove('hidden');
+  var bm = document.getElementById('btn-mayar');
+  if (bm) bm.classList.remove('hidden');
+  var pc = document.getElementById('pay-choices');
+  if (pc) pc.classList.remove('hidden');
+  var pd = document.getElementById('pay-detail');
+  if (pd) pd.classList.add('hidden');
+  stopPaymentPolling();
 }
 // Polling status order: setelah user kembali dari halaman Mayar, cek apakah
 // webhook sudah mengonfirmasi. UX sukses sama seperti mode demo.
