@@ -119,10 +119,9 @@
       <h2 class="font-extrabold text-lg">Pembayaran</h2>
       <button onclick="closeModal('modal-pay')" class="text-slate-400 hover:text-rose-500 text-xl"><i class="fa-solid fa-xmark"></i></button>
     </div>
-    <div id="pay-choices" class="grid grid-cols-3 gap-2 mb-4">
+    <div id="pay-choices" class="grid grid-cols-2 gap-2 mb-4">
       <button onclick="createPayment('cod')" class="bg-amber-50 border-2 border-amber-300 hover:border-amber-500 rounded-xl py-4 font-bold text-amber-700 text-sm"><i class="fa-solid fa-money-bill-wave mr-1"></i>COD</button>
-      <button onclick="createPayment('transfer')" class="bg-blue-50 border-2 border-blue-300 hover:border-blue-500 rounded-xl py-4 font-bold text-blue-700 text-sm"><i class="fa-solid fa-building-columns mr-1"></i>Transfer</button>
-      <button onclick="createPayment('qris')" class="bg-purple-50 border-2 border-purple-300 hover:border-purple-500 rounded-xl py-4 font-bold text-purple-700 text-sm"><i class="fa-solid fa-qrcode mr-1"></i>QRIS</button>
+      <button onclick="createPayment('qris')" class="bg-blue-50 border-2 border-blue-300 hover:border-blue-500 rounded-xl py-4 font-bold text-blue-700 text-sm"><i class="fa-solid fa-qrcode mr-1"></i>QRIS/Transfer</button>
     </div>
     <div id="pay-detail" class="hidden border rounded-xl p-4 bg-slate-50">
       <div id="pay-info" class="text-sm space-y-1 mb-4"></div>
@@ -421,7 +420,7 @@ function createPayment(method) {
     document.getElementById('btn-mayar').classList.remove('hidden');
     document.getElementById('pay-info').innerHTML =
       '<p><b>Order:</b> ' + currentOrder.id + '</p>' +
-      '<p><b>Metode:</b> ' + (method === 'qris' ? 'QRIS' : 'Transfer bank') + '</p>' +
+      '<p><b>Metode:</b> QRIS/Transfer</p>' +
       '<p><b>Nominal:</b> ' + fmtRp(res.amount) + '</p>' +
       '<p class="text-slate-500">Selesaikan pembayaran, lalu kembali ke halaman ini. Status pesanan otomatis diperbarui.</p>';
   }).catch(function(e) {
