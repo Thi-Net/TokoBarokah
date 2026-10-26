@@ -813,7 +813,7 @@
                 const prods = (lastCatalogCache || []);
                 const detail = oi.map(i => {
                   const prod = prods.find(p => p.id === i.product_id);
-                  return '<tr class="border-t border-slate-100"><td class="py-1.5 pr-2">' + (prod ? prod.name : i.product_id) + '</td><td class="py-1.5 pr-2 text-slate-500">' + i.unit + '</td><td class="py-1.5 pr-2 text-right">' + i.qty + '</td><td class="py-1.5 text-right">' + Number(i.price_snapshot).toLocaleString('id-ID') + '</td><td class="py-1.5 text-right font-bold">' + Number(i.subtotal).toLocaleString('id-ID') + '</td></tr>';
+                  return '<tr class="border-t border-slate-100"><td class="py-1.5 pr-2">' + (prod ? prod.name : i.product_id) + '</td><td class="py-1.5 pr-2 text-slate-500">' + (i.unit_name || '-') + '</td><td class="py-1.5 pr-2 text-right">' + i.qty + '</td><td class="py-1.5 text-right">' + Number(i.price_snapshot).toLocaleString('id-ID') + '</td><td class="py-1.5 text-right font-bold">' + Number(i.subtotal).toLocaleString('id-ID') + '</td></tr>';
                 }).join('');
                 return `<div class="border rounded-xl p-3">
                     <div class="flex justify-between items-center flex-wrap gap-2">
