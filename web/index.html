@@ -773,8 +773,14 @@
         function cacheCatalogForOrders() {
             if (globalProducts && globalProducts.length) { lastCatalogCache = globalProducts; return; }
         }
-        const SHOP_STATUS_FLOW = { pending: ['paid','cancelled'], paid: ['processing','cancelled'], processing: ['ready','shipping','cancelled'], ready: ['completed'], shipping: ['completed'], completed: [], cancelled: [] };
-        const SHOP_STATUS_LABEL = { pending:'Menunggu Bayar', paid:'Dibayar', processing:'Disiapkan', ready:'Siap Diambil', shipping:'Dikirim', completed:'Selesai', cancelled:'Batal' };
+        const SHOP_STATUS_LABEL = { pending:'Menunggu Bayar', paid:'Dibayar', processing:'Disiapkan', ready:'Siap Diambil', shipping:'Siap Dikirim', completed:'Selesai', cancelled:'Batal' };
+        function statusFlow(o) {
+            // pickup: tidak ada tahap kirim; delivery: pakai shipping
+            if (o.fulfillment === 'delivery') {
+                return { pending:['paid','cancelled'], paid:['processing','cancelled'], processing:['shipping','cancelled'], shipping:['completed'], completed:[], cancelled:[] }[o.status] || [];
+            }
+            return { pending:['paid','cancelled'], paid:['processing','cancelled'], processing:['ready','cancelled'], ready:['completed'], completed:[], cancelled:[] }[o.status] || [];
+        }
         let lastOrdersData = null;
 
         async function loadShopOrders() {
@@ -804,8 +810,11 @@
             box.innerHTML = data.orders.map(o => {
                 const oi = items.filter(i => i.order_id === o.id);
                 const cust = (data.customers || []).find(c => c.id === o.customer_id) || {};
-                const nexts = SHOP_STATUS_FLOW[o.status] || [];
-                const btns = nexts.map(s => `<button onclick="setOrderStatus('${o.id}','${s}')" class="text-xs font-bold px-3 py-2 rounded-lg ${s === 'cancelled' ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-700'}">${SHOP_STATUS_LABEL[s] || s}</button>`).join('');
+                const nexts = statusFlow(o);
+                const btns = nexts.map(s => {
+                    const cls = s === 'cancelled' ? 'bg-rose-50 text-rose-600' : s === 'completed' ? 'bg-emerald-600 text-white' : 'bg-emerald-50 text-emerald-700';
+                    return `<button onclick="${s === 'completed' ? `confirmComplete('${o.id}')` : `setOrderStatus('${o.id}','${s}')`}" class="text-xs font-bold px-3 py-2 rounded-lg ${cls}">${SHOP_STATUS_LABEL[s] || s}</button>`;
+                }).join('');
                 const stLabel = SHOP_STATUS_LABEL[o.status] || o.status;
                 const ful = o.fulfillment === 'delivery'
                   ? '<span class="font-bold text-cyan-700">🛵 DIKIRIM</span> ' + (o.delivery_slot || '') + ' · ' + (o.delivery_date || '') + ' — ' + (o.address || '') + (o.location_lat ? ' <a class="text-blue-600 underline" target="_blank" href="https://maps.google.com/?q=' + o.location_lat + ',' + o.location_lng + '">📍 lokasi</a>' : '')
@@ -826,7 +835,7 @@
                         <b class="text-emerald-700">Rp ${Number(o.total).toLocaleString('id-ID')}</b>
                         <div class="flex gap-1 flex-wrap items-center">
                             <button onclick="toggleOrderDetail('${o.id}')" class="text-xs font-bold px-3 py-2 rounded-lg bg-slate-100 text-slate-700">Rincian</button>
-                            ${btns || '<span class="text-xs text-slate-400">selesai</span>'}
+                            ${btns || '<span class="text-xs text-slate-400">selesai ✓</span>'}
                         </div>
                     </div>
                     <div id="detail-${o.id}" class="hidden mt-2 bg-slate-50 rounded-xl p-3 overflow-x-auto">
@@ -840,6 +849,53 @@
                     </div>
                 </div>`;
             }).join('');
+        }
+
+        function confirmComplete(orderId) {
+            const o = (lastOrdersData.orders || []).find(x => x.id === orderId);
+            if (!o) { setOrderStatus(orderId, 'completed'); return; }
+            const cust = ((lastOrdersData.customers) || []).find(c => c.id === o.customer_id) || {};
+            const items = (lastOrdersData.items || []).filter(i => i.order_id === orderId);
+            const prods = lastCatalogCache || [];
+            const rows = items.map(i => {
+                const prod = prods.find(p => p.id === i.product_id);
+                return '<tr><td class="py-1 pr-2">' + (prod ? prod.name : i.product_id) + '</td><td class="py-1 pr-2 text-slate-500">' + (i.unit_name || '-') + '</td><td class="py-1 pr-2 text-right">' + i.qty + '</td><td class="py-1 text-right font-bold">' + Number(i.subtotal).toLocaleString('id-ID') + '</td></tr>';
+            }).join('');
+            const ful = o.fulfillment === 'delivery'
+              ? '🛵 Dikirim ke: ' + (o.address || '-') + ' · ' + (o.delivery_slot || '') + ' ' + (o.delivery_date || '')
+              : '🏪 Diambil di toko';
+            const codNote = o.payment_method === 'cod' ? '<p class="text-xs text-amber-700 font-bold mt-2">⚠ COD: konfirmasi ini juga mencatat penjualan &amp; mengurangi stok.</p>' : '';
+            const html = '<div class="text-left text-sm space-y-2">' +
+              '<p><b>' + o.id + '</b> • ' + (cust.name || o.customer_id) + ' (' + (cust.phone || '-') + ')</p>' +
+              '<p class="text-xs text-slate-500">' + ful + '</p>' +
+              '<table class="w-full text-xs mt-2"><tbody>' + rows + '</tbody></table>' +
+              '<div class="flex justify-between font-bold border-t pt-2 mt-2"><span>Total</span><span class="text-emerald-700">Rp ' + Number(o.total).toLocaleString('id-ID') + '</span></div>' +
+              (o.note ? '<p class="text-xs text-slate-500"><b>Catatan:</b> ' + o.note + '</p>' : '') +
+              codNote +
+              '<p class="text-xs text-slate-500 pt-1">Tandai pesanan ini SELESAI? Tindakan ini tidak bisa dibatalkan.</p>' +
+              '</div>';
+            showConfirmModal('Konfirmasi Pesanan Selesai', html, function() { setOrderStatus(orderId, 'completed'); });
+        }
+
+        function showConfirmModal(title, htmlBody, onYes) {
+            let m = document.getElementById('modal-confirm');
+            if (!m) {
+                m = document.createElement('div');
+                m.id = 'modal-confirm';
+                m.className = 'fixed inset-0 bg-slate-900/70 z-[70] hidden items-center justify-center p-4 backdrop-blur-sm';
+                m.innerHTML = '<div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 max-h-[85vh] overflow-y-auto fade">' +
+                  '<h3 id="cf-title" class="font-extrabold text-lg mb-3"></h3>' +
+                  '<div id="cf-body"></div>' +
+                  '<div class="flex gap-2 mt-5"><button id="cf-no" class="flex-1 bg-slate-100 text-slate-600 font-bold py-3 rounded-xl">Batal</button>' +
+                  '<button id="cf-yes" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3 rounded-xl">Ya, Selesaikan</button></div>' +
+                  '</div>';
+                document.body.appendChild(m);
+            }
+            document.getElementById('cf-title').innerText = title;
+            document.getElementById('cf-body').innerHTML = htmlBody;
+            document.getElementById('cf-no').onclick = function() { m.classList.add('hidden'); m.classList.remove('flex'); };
+            document.getElementById('cf-yes').onclick = function() { m.classList.add('hidden'); m.classList.remove('flex'); onYes(); };
+            m.classList.remove('hidden'); m.classList.add('flex');
         }
 
         function toggleOrderDetail(orderId) {
