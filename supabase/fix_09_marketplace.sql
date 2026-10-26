@@ -219,8 +219,11 @@ begin
   end if;
 
   select 'ORD-' || to_char(now() at time zone 'Asia/Jakarta','YYMMDD') || '-' ||
-    lpad((abs(hashtext(v_cid || extract(epoch from now())::text)) % 9000 + 1000)::text, 4, '0')
+    lpad((abs(hashtext(v_cid || extract(epoch from now())::text || floor(random()*10000)::text)) % 9000 + 1000)::text, 4, '0')
   into v_oid;
+
+  -- header dibuat dulu (FK order_items -> orders), status pending
+  insert into orders (id, customer_id, total, note) values (v_oid, v_cid, 0, p_note);
 
   for v_item in select * from json_array_elements(coalesce(p_items, '[]'::json)) loop
     -- validasi harga & stok dari DB (bukan dari client)
@@ -230,6 +233,7 @@ begin
       and sp.active = true
     order by sp.effective_at desc nulls last limit 1;
     if v_price is null then
+      delete from orders where id = v_oid;
       return json_build_object('ok', false, 'message', 'Harga tidak tersedia untuk ' || v_item->>'productId' || '/' || v_item->>'unit');
     end if;
 
@@ -239,6 +243,7 @@ begin
       from stock_ledger) t where rn = 1) l
     where l.product_id = v_item->>'productId';
     if coalesce(v_stock, 0) < (v_item->>'qty')::numeric then
+      delete from orders where id = v_oid;
       return json_build_object('ok', false, 'message', 'Stok tidak cukup untuk produk ' || v_item->>'productId');
     end if;
 
@@ -249,10 +254,11 @@ begin
   end loop;
 
   if v_total <= 0 then
+    delete from orders where id = v_oid;
     return json_build_object('ok', false, 'message', 'Keranjang kosong.');
   end if;
 
-  insert into orders (id, customer_id, total, note) values (v_oid, v_cid, v_total, p_note);
+  update orders set total = v_total, updated_at = now() where id = v_oid;
   return json_build_object('ok', true, 'orderId', v_oid, 'total', v_total);
 end;
 $$;

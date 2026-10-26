@@ -226,7 +226,7 @@ function checkout() {
   btn.disabled = true; btn.innerText = 'Mengirim...';
   rpc('shop_create_order', {
     p_token: session.token,
-    p_items: JSON.stringify(cart.map(function(l){ return { productId: l.productId, unit: l.unit, qty: l.qty }; })),
+    p_items: cart.map(function(l){ return { productId: l.productId, unit: l.unit, qty: l.qty }; }),
     p_note: document.getElementById('order-note').value || '',
     p_name: session.name || ''
   }).then(function(res) {
