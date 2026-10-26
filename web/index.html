@@ -430,7 +430,7 @@
             if(id === 'inventory') loadLedgerData();
             if(id === 'laporan') loadFinancialReport();
             if(id === 'database') loadDatabaseSheet('PRODUCTS', document.getElementById('btn-db-PRODUCTS'));
-            if(id === 'pesanan') { /* perlu PIN, dimuat manual via tombol */ }
+            if(id === 'pesanan') { cacheCatalogForOrders(); /* data dimuat via tombol (PIN) */ }
         }
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('-translate-x-full'); }
         function formatRp(val) { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val); }
@@ -762,7 +762,20 @@
         }
 
         // ==== PESANAN ONLINE (marketplace admin) ====
-        const SHOP_STATUS_FLOW = { pending: ['paid','cancelled'], paid: ['processing','cancelled'], processing: ['ready','shipped','cancelled'], ready: ['completed'], shipped: ['completed'], completed: [], cancelled: [] };
+        let lastCatalogCache = [];
+        function cacheCatalogForOrders() {
+            // pastikan nama produk tersedia utk rincian pesanan online
+            if (globalProducts && globalProducts.length) { lastCatalogCache = globalProducts; return; }
+            if (typeof google !== 'undefined' && google.script && google.script.run) {
+                google.script.run.withSuccessHandler(prods => { globalProducts = prods; lastCatalogCache = prods; }).getActiveProductsList();
+            }
+        }
+        function cacheCatalogForOrders() {
+            if (globalProducts && globalProducts.length) { lastCatalogCache = globalProducts; return; }
+        }
+        const SHOP_STATUS_FLOW = { pending: ['paid','cancelled'], paid: ['processing','cancelled'], processing: ['ready','shipping','cancelled'], ready: ['completed'], shipping: ['completed'], completed: [], cancelled: [] };
+        const SHOP_STATUS_LABEL = { pending:'Menunggu Bayar', paid:'Dibayar', processing:'Disiapkan', ready:'Siap Diambil', shipping:'Dikirim', completed:'Selesai', cancelled:'Batal' };
+        let lastOrdersData = null;
 
         async function loadShopOrders() {
             const pin = (document.getElementById('admin-pin').value || '').trim();
@@ -777,7 +790,7 @@
                 });
                 const data = await res.json();
                 if (!data.ok) { showToast(data.message || 'Gagal', 'warning'); box.innerHTML = '<p class="text-sm text-rose-500">' + (data.message || 'Gagal memuat') + '</p>'; return; }
-                renderShopOrders(data);
+                lastOrdersData = data; renderShopOrders(data);
             } catch (e) {
                 showToast('Gagal: ' + e, 'warning');
                 box.innerHTML = '<p class="text-sm text-rose-500">Gagal memuat: ' + e + '</p>';
@@ -792,21 +805,45 @@
                 const oi = items.filter(i => i.order_id === o.id);
                 const cust = (data.customers || []).find(c => c.id === o.customer_id) || {};
                 const nexts = SHOP_STATUS_FLOW[o.status] || [];
-                const btns = nexts.map(s => `<button onclick="setOrderStatus('${o.id}','${s}')" class="text-xs font-bold px-3 py-2 rounded-lg ${s === 'cancelled' ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-700'}">${s}</button>`).join('');
+                const btns = nexts.map(s => `<button onclick="setOrderStatus('${o.id}','${s}')" class="text-xs font-bold px-3 py-2 rounded-lg ${s === 'cancelled' ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-700'}">${SHOP_STATUS_LABEL[s] || s}</button>`).join('');
+                const stLabel = SHOP_STATUS_LABEL[o.status] || o.status;
+                const ful = o.fulfillment === 'delivery'
+                  ? '<span class="font-bold text-cyan-700">🛵 DIKIRIM</span> ' + (o.delivery_slot || '') + ' · ' + (o.delivery_date || '') + ' — ' + (o.address || '') + (o.location_lat ? ' <a class="text-blue-600 underline" target="_blank" href="https://maps.google.com/?q=' + o.location_lat + ',' + o.location_lng + '">📍 lokasi</a>' : '')
+                  : '<span class="font-bold text-emerald-700">🏪 AMBIL DI TOKO</span>';
+                const prods = (lastCatalogCache || []);
+                const detail = oi.map(i => {
+                  const prod = prods.find(p => p.id === i.product_id);
+                  return '<tr class="border-t border-slate-100"><td class="py-1.5 pr-2">' + (prod ? prod.name : i.product_id) + '</td><td class="py-1.5 pr-2 text-slate-500">' + i.unit + '</td><td class="py-1.5 pr-2 text-right">' + i.qty + '</td><td class="py-1.5 text-right">' + Number(i.price_snapshot).toLocaleString('id-ID') + '</td><td class="py-1.5 text-right font-bold">' + Number(i.subtotal).toLocaleString('id-ID') + '</td></tr>';
+                }).join('');
                 return `<div class="border rounded-xl p-3">
                     <div class="flex justify-between items-center flex-wrap gap-2">
                         <b class="text-sm">${o.id}</b>
-                        <span class="text-xs font-bold px-2 py-1 rounded bg-slate-100">${o.status}</span>
+                        <span class="text-xs font-bold px-2 py-1 rounded bg-slate-100">${stLabel}</span>
                     </div>
                     <p class="text-xs text-slate-500 mt-1">Pelanggan: ${cust.name || o.customer_id} (${cust.phone || '-'}) • ${new Date(o.created_at).toLocaleString('id-ID')}</p>
-                    <p class="text-xs mt-1">${o.fulfillment === 'delivery' ? '<span class="font-bold text-cyan-700">🛵 KIRIM</span> ' + (o.delivery_slot || '') + ' ' + (o.delivery_date || '') + ' — ' + (o.address || '') + (o.location_lat ? ' <a class="text-blue-600 underline" target="_blank" href="https://maps.google.com/?q=' + o.location_lat + ',' + o.location_lng + '">📍 lokasi</a>' : '') : '<span class="font-bold text-emerald-700">🏪 AMBIL DI TOKO</span>'}</p>
-                    <p class="text-sm mt-1">${oi.map(i => `${i.product_id} <span class="text-slate-400">${i.unit}×${i.qty}</span>`).join(', ')}</p>
+                    <p class="text-xs mt-1">${ful}</p>
                     <div class="flex justify-between items-center mt-2 flex-wrap gap-2">
                         <b class="text-emerald-700">Rp ${Number(o.total).toLocaleString('id-ID')}</b>
-                        <div class="flex gap-1">${btns || '<span class="text-xs text-slate-400">selesai</span>'}</div>
+                        <div class="flex gap-1 flex-wrap items-center">
+                            <button onclick="toggleOrderDetail('${o.id}')" class="text-xs font-bold px-3 py-2 rounded-lg bg-slate-100 text-slate-700">Rincian</button>
+                            ${btns || '<span class="text-xs text-slate-400">selesai</span>'}
+                        </div>
+                    </div>
+                    <div id="detail-${o.id}" class="hidden mt-2 bg-slate-50 rounded-xl p-3 overflow-x-auto">
+                        <p class="text-[11px] font-bold text-slate-400 uppercase mb-1">Rincian Pesanan</p>
+                        <table class="w-full text-xs">
+                            <thead><tr class="text-slate-400 text-left"><th class="pr-2 font-bold">Produk</th><th class="pr-2 font-bold">Satuan</th><th class="pr-2 text-right font-bold">Qty</th><th class="text-right font-bold pr-2">Harga</th><th class="text-right font-bold">Subtotal</th></tr></thead>
+                            <tbody>${detail}</tbody>
+                        </table>
+                        ${o.note ? '<p class="text-xs text-slate-500 mt-2"><b>Catatan:</b> ' + o.note + '</p>' : ''}
+                        ${o.payment_method ? '<p class="text-xs text-slate-500 mt-1"><b>Metode bayar:</b> ' + o.payment_method.toUpperCase() + '</p>' : ''}
                     </div>
                 </div>`;
             }).join('');
+        }
+
+        function toggleOrderDetail(orderId) {
+            document.getElementById('detail-' + orderId).classList.toggle('hidden');
         }
 
         async function setOrderStatus(orderId, status) {

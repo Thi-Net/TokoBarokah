@@ -102,13 +102,7 @@
           </div>
           <div>
             <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Slot jam</label>
-            <select id="deliv-slot" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm">
-              <option value="06.00-09.00">06.00–09.00</option>
-              <option value="09.00-12.00">09.00–12.00</option>
-              <option value="12.00-15.00">12.00–15.00</option>
-              <option value="15.00-18.00">15.00–18.00</option>
-              <option value="18.00-21.00">18.00–21.00</option>
-            </select>
+            <select id="deliv-slot" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm"></select>
           </div>
         </div>
       </div>
@@ -315,6 +309,31 @@ function fillDeliveryDates() {
     opts.push('<option value="' + d.toISOString().slice(0,10) + '">' + days[d.getDay()] + ', ' + d.toLocaleDateString('id-ID',{day:'numeric',month:'short'}) + '</option>');
   }
   sel.innerHTML = opts.join('');
+  sel.onchange = fillDeliverySlots;
+  fillDeliverySlots();
+}
+// slot jam real-time: untuk "hari ini", slot yang sudah lewat waktunya disembunyikan
+function fillDeliverySlots() {
+  var sel = document.getElementById('deliv-slot');
+  var dateSel = document.getElementById('deliv-date');
+  var isToday = dateSel.value === new Date().toISOString().slice(0,10);
+  var now = new Date();
+  var nowMin = now.getHours()*60 + now.getMinutes();
+  var slots = [
+    { v: 'langsung', label: '⚡ Langsung setelah pembayaran', start: null },
+    { v: '06.00-09.00', label: '06.00–09.00', start: 6*60 },
+    { v: '09.00-12.00', label: '09.00–12.00', start: 9*60 },
+    { v: '12.00-15.00', label: '12.00–15.00', start: 12*60 },
+    { v: '15.00-18.00', label: '15.00–18.00', start: 15*60 },
+    { v: '18.00-21.00', label: '18.00–21.00', start: 18*60 }
+  ];
+  var out = '';
+  slots.forEach(function(s) {
+    if (isToday && s.start !== null && s.start <= nowMin) return; // slot lewat -> sembunyikan
+    out += '<option value="' + s.v + '">' + s.label + '</option>';
+  });
+  if (!out) out = '<option value="langsung">⚡ Langsung setelah pembayaran</option>';
+  sel.innerHTML = out;
 }
 function pickLocation() {
   if (!navigator.geolocation) { showToast('GPS tidak didukung browser ini', 'error'); return; }
@@ -464,11 +483,12 @@ function updateAccountUI() {
 function loadMyOrders() {
   rpc('shop_my_orders', { p_token: session.token }).then(function(res) {
     if (!res.ok) { showToast(res.message, 'error'); return; }
-    var statusBadge = { pending:'bg-amber-100 text-amber-700', paid:'bg-blue-100 text-blue-700', processing:'bg-indigo-100 text-indigo-700', ready:'bg-emerald-100 text-emerald-700', shipped:'bg-cyan-100 text-cyan-700', completed:'bg-slate-200 text-slate-600', cancelled:'bg-rose-100 text-rose-700' };
+    var statusBadge = { pending:'bg-amber-100 text-amber-700', paid:'bg-blue-100 text-blue-700', processing:'bg-indigo-100 text-indigo-700', ready:'bg-emerald-100 text-emerald-700', shipping:'bg-cyan-100 text-cyan-700', completed:'bg-slate-200 text-slate-600', cancelled:'bg-rose-100 text-rose-700' };
     document.getElementById('my-orders').innerHTML = res.orders.length ? res.orders.map(function(o) {
       var items = (res.items || []).filter(function(i){ return i.order_id === o.id; });
+      var slotLabel = o.delivery_slot === 'langsung' ? 'Langsung setelah pembayaran' : (o.delivery_slot || '');
       var ful = o.fulfillment === 'delivery'
-        ? '🛵 Kirim ' + (o.delivery_slot || '') + ' ' + (o.delivery_date || '')
+        ? '🛵 Kirim ' + slotLabel + ' ' + (o.delivery_date || '')
         : '🏪 Ambil di toko';
       return '<div class="border rounded-xl p-3">' +
         '<div class="flex justify-between items-center"><b class="text-sm">' + o.id + '</b>' +
