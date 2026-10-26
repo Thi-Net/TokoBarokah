@@ -114,6 +114,14 @@ begin
                 lpad((abs(hashtext(v_cur_id || v_u || extract(epoch from now())::text)) % 9000 + 1000)::text, 4, '0'),
                 v_cur_id, v_u, v_price);
       end if;
+    when 'setprice' then
+      v_u := nullif(trim(coalesce(v_unit->>'unit','')), '');
+      v_price := nullif(v_unit->>'price','')::numeric;
+      if v_u is null or v_price is null or v_price <= 0 then
+        return json_build_object('ok', false, 'message', 'Set harga: unit & price wajib.');
+      end if;
+      update selling_prices set price = v_price
+      where product_id = v_cur_id and unit_name = v_u and active = true;
     when 'remove' then
       v_u := nullif(trim(coalesce(v_unit->>'unit','')), '');
       if v_u is null then

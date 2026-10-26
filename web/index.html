@@ -995,7 +995,7 @@
             const container = document.getElementById('product-list-container');
             container.innerHTML = prods.map((p, idx) => `
                 <div class="p-4 bg-slate-50 rounded-xl border space-y-2">
-                    <div class="flex justify-between items-center"><span class="font-bold text-slate-800">${p.name} <span class="text-slate-400 font-medium ml-2">(${p.id})</span>${p.barcode ? `<span class="ml-2 text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold"><i class="fa-solid fa-barcode mr-1"></i>${p.barcode}</span>` : ''}</span><span class="flex items-center gap-2"><span class="text-xs font-bold text-slate-600 bg-slate-200 px-2 py-0.5 rounded">Stok: ${p.stock} ${p.baseUnit}</span><button onclick="openPhotoUpload('${p.id}', '${p.name.replace(/'/g, "\\'")}')" title="Upload foto produk" class="text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg px-2.5 py-1.5 transition"><i class="fa-solid fa-camera"></i></button><button onclick="deleteProduct('${p.id}', '${p.name.replace(/'/g, "\\'")}')" title="Hapus produk" class="text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg px-2.5 py-1.5 transition"><i class="fa-solid fa-trash-can"></i></button></span></div>
+                    <div class="flex justify-between items-center"><span class="font-bold text-slate-800">${p.name} <span class="text-slate-400 font-medium ml-2">(${p.id})</span>${p.barcode ? `<span class="ml-2 text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold"><i class="fa-solid fa-barcode mr-1"></i>${p.barcode}</span>` : ''}</span><span class="flex items-center gap-2"><span class="text-xs font-bold text-slate-600 bg-slate-200 px-2 py-0.5 rounded">Stok: ${p.stock} ${p.baseUnit}</span><button onclick="openEditProduct('${p.id}')" title="Edit produk" class="text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg px-2.5 py-1.5 transition"><i class="fa-solid fa-pencil"></i></button><button onclick="openPhotoUpload('${p.id}', '${p.name.replace(/'/g, "\\'")}')" title="Upload foto produk" class="text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg px-2.5 py-1.5 transition"><i class="fa-solid fa-camera"></i></button><button onclick="deleteProduct('${p.id}', '${p.name.replace(/'/g, "\\'")}')" title="Hapus produk" class="text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg px-2.5 py-1.5 transition"><i class="fa-solid fa-trash-can"></i></button></span></div>
                     <div class="flex flex-wrap gap-4 pt-2 border-t text-xs">
                         ${(p.units || []).map((u, uIdx) => `
                             <div class="flex items-center space-x-2 bg-white p-2 rounded border">
@@ -1196,7 +1196,115 @@ async function uploadProductPhoto() {
     btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up mr-1"></i>Upload ke Cloudinary';
   }
 }
+
+// ===== Edit produk (fix_18: admin_edit_product) =====
+let epOrig = null; // {id, name, barcode, units: [{unit, price, hpp}]}
+function openEditProduct(pid) {
+  const p = (globalProducts || []).find(x => x.id === pid);
+  if (!p) { showToast('Data produk tidak ditemukan — muat ulang koneksi.', 'warning'); return; }
+  epOrig = { id: p.id, name: p.name, barcode: p.barcode || '', units: (p.units || []).map(u => ({ unit: u, unitOrig: u, price: (p.prices && p.prices[u]) || 0, priceOrig: (p.prices && p.prices[u]) || 0 })) };
+  document.getElementById('ep-id').value = p.id;
+  document.getElementById('ep-name').value = p.name;
+  document.getElementById('ep-barcode').value = epOrig.barcode;
+  document.getElementById('ep-pin').value = '';
+  renderEpUnits();
+  const m = document.getElementById('modal-edit-product');
+  m.classList.remove('hidden'); m.classList.add('flex');
+}
+function closeEditProduct() {
+  const m = document.getElementById('modal-edit-product');
+  m.classList.add('hidden'); m.classList.remove('flex');
+}
+function renderEpUnits() {
+  const box = document.getElementById('ep-units');
+  box.innerHTML = (epOrig.units || []).map((u, i) => `
+    <div class="flex items-center gap-2 bg-slate-50 border rounded-xl p-2" data-idx="${i}">
+      <input value="${u.unit}" onchange="epRename(${i}, this.value)" class="flex-1 border rounded-lg px-2 py-1.5 text-sm" placeholder="Nama satuan (mis. Pcs)">
+      <span class="text-[10px] text-slate-400 font-bold">Harga:</span>
+      <input type="number" value="${u.price}" onchange="epPrice(${i}, this.value)" class="border rounded-lg px-2 py-1.5 text-sm w-24">
+      <button onclick="epRemoveRow(${i})" title="Hapus satuan" class="text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg px-2 py-1.5"><i class="fa-solid fa-trash-can"></i></button>
+    </div>`).join('') + (epOrig.units || []).filter(u => u.isNew).map((u, j) => '').join('');
+}
+function epRename(i, val) { if (epOrig.units[i]) epOrig.units[i].unit = val.trim(); }
+function epPrice(i, val) { if (epOrig.units[i]) epOrig.units[i].price = parseFloat(val) || 0; }
+function epAddUnitRow() {
+  epOrig.units.push({ unit: '', price: 0, isNew: true });
+  renderEpUnits();
+  // fokus ke input satuan baru terakhir
+  const rows = document.querySelectorAll('#ep-units > div');
+  if (rows.length) rows[rows.length - 1].querySelector('input').focus();
+}
+function epRemoveRow(i) {
+  const u = epOrig.units[i];
+  if (u && u.isNew) { epOrig.units.splice(i, 1); renderEpUnits(); return; }
+  if (u) { u.remove = true; renderEpUnits(); document.querySelectorAll('#ep-units > div')[i].classList.add('opacity-40','line-through'); }
+}
+async function saveEditProduct() {
+  const pin = (document.getElementById('ep-pin').value || '').trim();
+  if (!pin) { showToast('PIN admin wajib diisi', 'warning'); return; }
+  const newId = (document.getElementById('ep-id').value || '').trim();
+  const newName = (document.getElementById('ep-name').value || '').trim();
+  if (!newId || !newName) { showToast('ID & nama produk wajib diisi', 'warning'); return; }
+  const unitsPayload = [];
+  const seen = {};
+  for (const u of epOrig.units) {
+    const unit = (u.unit || '').trim();
+    if (!unit) { showToast('Ada satuan tanpa nama — isi atau hapus dulu.', 'warning'); return; }
+    if (seen[unit]) { showToast('Satuan "' + unit + '" dobel.', 'warning'); return; }
+    seen[unit] = true;
+    if (u.remove) unitsPayload.push({ action: 'remove', unit: u.unitOrig });
+    else if (u.isNew) unitsPayload.push({ action: 'add', unit, price: u.price });
+    else if (unit !== u.unitOrig) unitsPayload.push({ action: 'rename', from: u.unitOrig, to: unit });
+    else if (u.price !== u.priceOrig) unitsPayload.push({ action: 'setprice', unit, price: u.price });
+  }
+  const btn = document.getElementById('btn-ep-save');
+  btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>Menyimpan...';
+  try {
+    const url = (localStorage.getItem('kpos_sb_url') || 'https://zosdcuiulgpjevgbyquw.supabase.co').replace(/\/$/, '');
+    const key = localStorage.getItem('kpos_sb_key');
+    const resp = await fetch(url + '/rest/v1/rpc/admin_edit_product', {
+      method: 'POST',
+      headers: { 'apikey': key, 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_pin: pin, p_product_id: epOrig.id, p_new_id: newId !== epOrig.id ? newId : null, p_name: newName !== epOrig.name ? newName : null, p_barcode: (document.getElementById('ep-barcode').value || '') !== epOrig.barcode ? (document.getElementById('ep-barcode').value || '') : null, p_units: unitsPayload })
+    });
+    const d = await resp.json();
+    if (d && d.ok === false) throw new Error(d.message || 'Gagal menyimpan');
+    showToast('Perubahan tersimpan!', 'success');
+    closeEditProduct();
+    if (window.__kposConnected && typeof testConnection === 'function') {
+      testConnection(localStorage.getItem('kpos_sb_url'), localStorage.getItem('kpos_sb_key')).then(prods => {
+        globalProducts = prods || []; renderProductTable(globalProducts);
+      });
+    }
+  } catch (err) {
+    showToast(err.message || 'Gagal menyimpan', 'warning');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-floppy-disk mr-1"></i>Simpan Perubahan';
+  }
+}
 </script>
+<!-- MODAL EDIT PRODUK -->
+<div id="modal-edit-product" class="fixed inset-0 bg-slate-900/70 z-50 hidden items-center justify-center p-4 backdrop-blur-sm">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 max-h-[88vh] overflow-y-auto fade">
+    <div class="flex justify-between items-center mb-3">
+      <h3 class="font-extrabold text-lg">Edit Produk</h3>
+      <button onclick="closeEditProduct()" class="text-slate-400 hover:text-rose-500 text-xl"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Product ID</label>
+    <input id="ep-id" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm mb-3" placeholder="PRD-001">
+    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nama Produk</label>
+    <input id="ep-name" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm mb-3">
+    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Barcode</label>
+    <input id="ep-barcode" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm mb-4" placeholder="Kosongkan jika tidak ada">
+    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Satuan</label>
+    <div id="ep-units" class="space-y-2 mb-2"></div>
+    <button onclick="epAddUnitRow()" class="text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg px-3 py-2 mb-4"><i class="fa-solid fa-plus mr-1"></i>Tambah Satuan</button>
+    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">PIN Admin</label>
+    <input id="ep-pin" type="password" inputmode="numeric" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm mb-4" placeholder="PIN Admin">
+    <button id="btn-ep-save" onclick="saveEditProduct()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-extrabold py-3 rounded-xl"><i class="fa-solid fa-floppy-disk mr-1"></i>Simpan Perubahan</button>
+  </div>
+</div>
 <!-- MODAL UPLOAD FOTO PRODUK -->
 <div id="modal-photo" class="fixed inset-0 bg-slate-900/70 z-50 hidden items-center justify-center p-4 backdrop-blur-sm">
   <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 fade">
