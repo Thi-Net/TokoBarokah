@@ -42,14 +42,22 @@ button:active { transform: scale(0.97); }
     <span class="w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-xl flex items-center justify-center text-slate-900 shadow-lg shadow-emerald-500/30"><i class="fa-solid fa-store"></i></span>
     Toko Barokah
   </div>
-  <div id="nav-auth" class="hidden">
+  <div id="nav-auth" class="hidden flex items-center gap-2">
+    <a href="/shop" class="bg-slate-800 hover:bg-slate-700 text-slate-100 font-bold text-sm px-4 min-h-[44px] rounded-xl border border-slate-700 inline-flex items-center">
+      <i class="fa-solid fa-cart-shopping mr-1.5"></i>Belanja
+    </a>
     <button onclick="goPOS()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-bold text-sm px-5 min-h-[44px] rounded-xl shadow-lg shadow-emerald-500/30">
       <i class="fa-solid fa-cash-register mr-1.5"></i>Buka Kasir
     </button>
   </div>
-  <button id="nav-login" onclick="openLogin()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-bold text-sm px-5 min-h-[44px] rounded-xl shadow-lg shadow-emerald-500/30">
-    <i class="fa-solid fa-right-to-bracket mr-1.5"></i>Masuk
-  </button>
+  <div id="nav-guest" class="flex items-center gap-2">
+    <a href="/shop" class="bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-bold text-sm px-5 min-h-[44px] rounded-xl shadow-lg shadow-emerald-500/30 inline-flex items-center">
+      <i class="fa-solid fa-cart-shopping mr-1.5"></i>Belanja Online
+    </a>
+    <button id="nav-login" onclick="openLogin()" class="bg-slate-800 hover:bg-slate-700 text-slate-100 font-bold text-sm px-4 min-h-[44px] rounded-xl border border-slate-700">
+      <i class="fa-solid fa-right-to-bracket mr-1.5"></i>Masuk
+    </button>
+  </div>
 </nav>
 
 <!-- HERO -->
@@ -73,13 +81,14 @@ button:active { transform: scale(0.97); }
     </p>
 
     <div class="rise rise-4 flex flex-col sm:flex-row gap-3 justify-center">
-      <button onclick="openLogin()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-extrabold text-lg px-10 min-h-[56px] rounded-2xl shadow-xl shadow-emerald-500/30">
-        <i class="fa-solid fa-cash-register mr-2"></i>Buka Kasir
-      </button>
-      <a href="#fitur" class="bg-slate-800/80 hover:bg-slate-700 text-slate-100 font-bold text-lg px-8 min-h-[56px] rounded-2xl border border-slate-700 inline-flex items-center justify-center">
-        Lihat fitur <i class="fa-solid fa-arrow-down ml-2 text-sm"></i>
+      <a href="/shop" class="bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-extrabold text-lg px-10 min-h-[56px] rounded-2xl shadow-xl shadow-emerald-500/30 inline-flex items-center justify-center">
+        <i class="fa-solid fa-cart-shopping mr-2"></i>Belanja Online
       </a>
+      <button onclick="openLogin()" class="bg-slate-800/80 hover:bg-slate-700 text-slate-100 font-bold text-lg px-8 min-h-[56px] rounded-2xl border border-slate-700 inline-flex items-center justify-center">
+        <i class="fa-solid fa-cash-register mr-2"></i>Masuk Kasir
+      </button>
     </div>
+    <p class="rise rise-4 text-slate-500 text-sm mt-4">Pelanggan? Belanja langsung tanpa download app — cukup nomor HP.</p>
 
     <!-- Statistik -->
     <div class="rise rise-5 mt-14 grid grid-cols-3 gap-3 max-w-xl mx-auto">
@@ -327,7 +336,7 @@ function getAuth() {
   var auth = getAuth();
   if (auth) {
     document.getElementById('btn-logout').classList.remove('hidden');
-    document.getElementById('nav-login').classList.add('hidden');
+    document.getElementById('nav-guest').classList.add('hidden');
     document.getElementById('nav-auth').classList.remove('hidden');
   }
 })();
