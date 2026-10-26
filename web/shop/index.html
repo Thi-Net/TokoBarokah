@@ -228,7 +228,11 @@ function renderCatalog() {
       return '<option value="' + u + '"' + (u === firstUnit ? ' selected' : '') + '>' + u + ' — ' + fmtRp(p.prices ? p.prices[u] : 0) + '</option>';
     }).join('');
     var out = Number(p.stock || 0) <= 0;
+    var imgHtml = p.imageUrl
+      ? '<img src="' + p.imageUrl + '" alt="' + p.name + '" loading="lazy" class="w-full h-32 object-cover rounded-xl mb-2 bg-slate-100" onerror="this.style.display=\'none\'">'
+      : '<div class="w-full h-32 rounded-xl mb-2 bg-emerald-50 flex items-center justify-center"><i class="fa-solid fa-basket-shopping text-emerald-300 text-3xl"></i></div>';
     return '<div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 fade">' +
+      imgHtml +
       '<p class="font-bold text-sm leading-snug">' + p.name + '</p>' +
       '<p class="text-xs text-slate-400 mb-2">' + p.category + ' • Stok: ' + p.stock + ' ' + p.baseUnit + '</p>' +
       (out ? '<p class="text-xs font-bold text-rose-500 mb-2">Stok habis</p>' :
