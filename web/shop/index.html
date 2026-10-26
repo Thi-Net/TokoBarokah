@@ -436,7 +436,9 @@ function createPayment(method) {
       '<p><b>Order:</b> ' + currentOrder.id + '</p>' +
       '<p><b>Metode:</b> QRIS/Transfer</p>' +
       '<p><b>Nominal:</b> ' + fmtRp(res.amount) + '</p>' +
-      '<p class="text-slate-500">Selesaikan pembayaran, lalu kembali ke halaman ini. Status pesanan otomatis diperbarui.</p>';
+      '<p id="pay-countdown" class="text-amber-600 font-semibold">⏳ Batas waktu pembayaran: <span id="pay-cd-val">60:00</span></p>' +
+      '<p class="text-slate-500">Selesaikan pembayaran sebelum waktu habis. Lewat 1 jam pesanan otomatis dibatalkan.</p>';
+    startCheckoutCountdown(60 * 60);
   }).catch(function(e) {
     if (btnM) { btnM.disabled = false; btnM.innerText = 'Bayar Sekarang'; }
     showToast('Gagal: ' + e, 'error');
@@ -468,7 +470,27 @@ function resetPayModal() {
   if (pc) pc.classList.remove('hidden');
   var pd = document.getElementById('pay-detail');
   if (pd) pd.classList.add('hidden');
+  stopCheckoutCountdown();
   stopPaymentPolling();
+}
+// Countdown batas pembayaran lokal: mengikuti expiredAt tagihan (1 jam).
+// Angka resminya tetap countdown Mayar di dalam iframe; ini hanya pengingat.
+var cdTimer = null, cdDeadline = 0;
+function startCheckoutCountdown(seconds) {
+  stopCheckoutCountdown();
+  cdDeadline = Date.now() + seconds * 1000;
+  cdTimer = setInterval(tickCheckoutCountdown, 1000);
+  tickCheckoutCountdown();
+}
+function stopCheckoutCountdown() { if (cdTimer) { clearInterval(cdTimer); cdTimer = null; } }
+function tickCheckoutCountdown() {
+  var el = document.getElementById('pay-cd-val');
+  if (!el) { stopCheckoutCountdown(); return; }
+  var s = Math.max(0, Math.floor((cdDeadline - Date.now()) / 1000));
+  var m = Math.floor(s / 60), sec = s % 60;
+  el.textContent = m + ':' + (sec < 10 ? '0' : '') + sec;
+  if (s <= 300) el.parentElement.classList.add('text-red-600'), el.parentElement.classList.remove('text-amber-600');
+  if (s <= 0) stopCheckoutCountdown();
 }
 // Polling status order: setelah user kembali dari halaman Mayar, cek apakah
 // webhook sudah mengonfirmasi. UX sukses sama seperti mode demo.
@@ -615,8 +637,10 @@ function resumePayment(oid) {
       '<p><b>Order:</b> ' + oid + '</p>' +
       '<p><b>Metode:</b> QRIS/Transfer</p>' +
       '<p><b>Nominal:</b> ' + fmtRp(res.amount) + '</p>' +
-      (sisa !== undefined ? '<p class="text-amber-600 font-semibold">⏳ Tagihan aktif ±' + sisa + ' menit lagi</p>' : '') +
-      '<p class="text-slate-500">Selesaikan pembayaran sebelum waktu habis, pesanan otomatis dibatalkan setelahnya.</p>';
+      (sisa !== undefined ? '<p id="pay-countdown" class="text-amber-600 font-semibold">⏳ Sisa waktu pembayaran: <span id="pay-cd-val">' + sisa + ':00</span></p>' : '') +
+      '<p class="text-slate-500">Selesaikan pembayaran sebelum waktu habis, pesanan otomatis dibatalkan setelahnya.</p>' +
+      '<p class="text-slate-400 text-xs">Waktu dihitung sejak tagihan dibuat (batas 1 jam).</p>';
+    if (sisa !== undefined) startCheckoutCountdown(sisa * 60);
     openPay(oid, res.amount);
     // langsung buka frame Mayar
     goMayar();
