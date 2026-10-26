@@ -76,8 +76,10 @@ Deno.serve(async (req: Request) => {
       return json({ ok: true, link: existing.mayar_link, paymentId: existing.id, amount: existing.amount, method })
     }
 
-    // Panggil Mayar Headless API (expiredAt WAJIB untuk endpoint v1)
-    const expiredAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+    // Panggil Mayar Headless API. Batas waktu tagihan: 1 jam untuk semua metode
+    // (opsi yang dipilih owner). Countdown di halaman Mayar mengikuti nilai ini,
+    // sehingga batas pembayaran pesanan = countdown Mayar yang dilihat customer.
+    const expiredAt = new Date(Date.now() + 60 * 60 * 1000).toISOString()
     const mayarRes = await fetch(MAYAR_BASE_URL + '/payment/create', {
       method: 'POST',
       headers: {

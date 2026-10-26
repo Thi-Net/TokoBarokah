@@ -70,12 +70,12 @@ begin
 
   if found then
     v_age := now() - v_pay.created_at;
-    if v_age >= interval '24 hours' then
-      -- lewat masa berlaku tagihan Mayar (expiredAt = created_at + 24 jam)
+    if v_age >= interval '1 hour' then
+      -- lewat masa berlaku tagihan Mayar (expiredAt = created_at + 1 jam, semua metode)
       update payments set status = 'expired' where id = v_pay.id;
       update orders set status = 'cancelled', updated_at = now() where id = p_order_id;
       return json_build_object('ok', false, 'expired', true,
-        'message', 'Waktu pembayaran habis (24 jam). Pesanan dibatalkan otomatis. Silakan buat pesanan baru.');
+        'message', 'Waktu pembayaran habis (1 jam). Pesanan dibatalkan otomatis. Silakan buat pesanan baru.');
     end if;
     -- tagihan masih aktif: lanjutkan dengan link yang sama
     if v_pay.status = 'initiated' then
@@ -83,8 +83,8 @@ begin
     end if;
     return json_build_object('ok', true, 'resume', true,
       'paymentId', v_pay.id, 'link', v_pay.mayar_link, 'amount', v_order.total,
-      'method', v_pay.method, 'expires_in_hours',
-      floor(extract(epoch from (interval '24 hours' - v_age)) / 3600));
+      'method', v_pay.method, 'expires_in_minutes',
+      floor(extract(epoch from (interval '1 hour' - v_age)) / 60));
   end if;
 
   -- belum ada tagihan Mayar: frontend memanggil mayar-create

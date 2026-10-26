@@ -584,7 +584,7 @@ function cancelOrder(oid) {
   });
 }
 // Lanjutkan pembayaran order pending: cek masa berlaku tagihan Mayar.
-// Aktif -> buka lagi di popup. Lewat 24 jam -> server auto-cancel + info.
+// Aktif -> buka lagi di popup. Lewat 1 jam -> server auto-cancel + info.
 // Belum ada tagihan -> buat baru via Edge Function mayar-create.
 function resumePayment(oid) {
   var btn = event && event.target ? event.target : null;
@@ -606,7 +606,7 @@ function resumePayment(oid) {
     // tagihan aktif: tampilkan di popup pembayaran
     currentOrder = { id: oid, total: res.amount };
     currentPayment = { paymentId: res.paymentId, amount: res.amount, method: res.method, mayarLink: res.link };
-    var sisa = res.expires_in_hours;
+    var sisa = res.expires_in_minutes;
     document.getElementById('pay-choices').classList.add('hidden');
     document.getElementById('pay-detail').classList.remove('hidden');
     document.getElementById('btn-mayar').classList.remove('hidden');
@@ -615,7 +615,7 @@ function resumePayment(oid) {
       '<p><b>Order:</b> ' + oid + '</p>' +
       '<p><b>Metode:</b> QRIS/Transfer</p>' +
       '<p><b>Nominal:</b> ' + fmtRp(res.amount) + '</p>' +
-      (sisa !== undefined ? '<p class="text-amber-600 font-semibold">⏳ Tagihan aktif ±' + sisa + ' jam lagi</p>' : '') +
+      (sisa !== undefined ? '<p class="text-amber-600 font-semibold">⏳ Tagihan aktif ±' + sisa + ' menit lagi</p>' : '') +
       '<p class="text-slate-500">Selesaikan pembayaran sebelum waktu habis, pesanan otomatis dibatalkan setelahnya.</p>';
     openPay(oid, res.amount);
     // langsung buka frame Mayar
