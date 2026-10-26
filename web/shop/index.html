@@ -113,6 +113,15 @@
 </div>
 
 <!-- MODAL PEMBAYARAN -->
+<div id="modal-product" class="fixed inset-0 bg-slate-900/70 z-50 hidden items-center justify-center p-4 backdrop-blur-sm">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 max-h-[85vh] overflow-y-auto fade">
+    <div class="flex justify-between items-center mb-3">
+      <h2 class="font-extrabold text-lg">Detail Produk</h2>
+      <button onclick="closeModal('modal-product')" class="text-slate-400 hover:text-rose-500 text-xl"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div id="product-detail"></div>
+  </div>
+</div>
 <div id="modal-pay" class="fixed inset-0 bg-slate-900/70 z-50 hidden items-center justify-center p-4 backdrop-blur-sm">
   <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 max-h-[85vh] overflow-y-auto fade">
     <div class="flex justify-between items-center mb-4">
@@ -231,17 +240,80 @@ function renderCatalog() {
     var imgHtml = p.imageUrl
       ? '<img src="' + p.imageUrl + '" alt="' + p.name + '" loading="lazy" class="w-full h-32 object-cover rounded-xl mb-2 bg-slate-100" onerror="this.style.display=\'none\'">'
       : '<div class="w-full h-32 rounded-xl mb-2 bg-emerald-50 flex items-center justify-center"><i class="fa-solid fa-basket-shopping text-emerald-300 text-3xl"></i></div>';
-    return '<div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 fade">' +
+    return '<div onclick="openProduct(\'' + p.id + '\')" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 fade cursor-pointer hover:shadow-md hover:border-emerald-200 transition">' +
       imgHtml +
       '<p class="font-bold text-sm leading-snug">' + p.name + '</p>' +
       '<p class="text-xs text-slate-400 mb-2">' + p.category + ' • Stok: ' + p.stock + ' ' + p.baseUnit + '</p>' +
       (out ? '<p class="text-xs font-bold text-rose-500 mb-2">Stok habis</p>' :
-        '<div class="flex gap-2">' +
-        '<select id="unit-' + p.id + '" class="flex-1 border border-slate-200 rounded-lg px-2 py-2 text-xs">' + unitOpts + '</select>' +
-        '<button onclick="addToCart(\'' + p.id + '\')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-2 rounded-lg text-xs"><i class="fa-solid fa-plus"></i></button>' +
-        '</div>') +
+        '<p class="text-sm font-extrabold text-emerald-700 mb-1">' + fmtRp(p.prices ? p.prices[firstUnit] : 0) + ' <span class="text-xs font-normal text-slate-400">/' + firstUnit + '</span>' +
+        (p.units && p.units.length > 1 ? ' <span class="text-xs text-slate-400">• ' + p.units.length + ' pilihan satuan</span>' : '') + '</p>') +
       '</div>';
   }).join('');
+}
+// ---- Detail produk (popup) + qty picker ----
+var detailPid = null, detailQty = 1;
+function openProduct(pid) {
+  var p = catalog.find(function(x){ return x.id === pid; });
+  if (!p) return;
+  detailPid = pid; detailQty = 1;
+  var firstUnit = (p.units && p.units[0]) || p.baseUnit;
+  var out = Number(p.stock || 0) <= 0;
+  var imgHtml = p.imageUrl
+    ? '<img src="' + p.imageUrl + '" alt="' + p.name + '" class="w-full h-48 object-cover rounded-xl mb-3 bg-slate-100" onerror="this.style.display=\'none\'">'
+    : '<div class="w-full h-48 rounded-xl mb-3 bg-emerald-50 flex items-center justify-center"><i class="fa-solid fa-basket-shopping text-emerald-300 text-5xl"></i></div>';
+  var unitOpts = (p.units || []).map(function(u) {
+    return '<option value="' + u + '"' + (u === firstUnit ? ' selected' : '') + '>' + u + ' — ' + fmtRp(p.prices ? p.prices[u] : 0) + '</option>';
+  }).join('');
+  document.getElementById('product-detail').innerHTML =
+    imgHtml +
+    '<p class="font-extrabold text-base">' + p.name + '</p>' +
+    '<p class="text-xs text-slate-400 mb-1">' + p.category + '</p>' +
+    '<p class="font-extrabold text-emerald-700 text-lg mb-1" id="pd-price">' + (out ? 'Stok habis' : fmtRp(p.prices ? p.prices[firstUnit] : 0) + ' <span class="text-xs font-normal text-slate-400">/' + firstUnit + '</span>') + '</p>' +
+    '<p class="text-xs text-slate-500 mb-3">Stok tersedia: ' + p.stock + ' ' + p.baseUnit + '</p>' +
+    (out ? '' :
+    '<label class="block text-xs font-bold text-slate-500 uppercase mb-1">Satuan</label>' +
+    '<select id="pd-unit" onchange="pdUpdatePrice()" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm mb-3">' + unitOpts + '</select>' +
+    '<label class="block text-xs font-bold text-slate-500 uppercase mb-1">Jumlah</label>' +
+    '<div class="flex items-center gap-3 mb-4">' +
+      '<button onclick="pdQty(-1)" class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 font-extrabold text-lg">−</button>' +
+      '<span id="pd-qty" class="font-extrabold text-lg w-10 text-center">1</span>' +
+      '<button onclick="pdQty(1)" class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 font-extrabold text-lg">+</button>' +
+      '<span id="pd-subtotal" class="ml-auto text-sm font-bold text-slate-600"></span>' +
+    '</div>' +
+    '<button onclick="pdAddToCart()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3 rounded-xl"><i class="fa-solid fa-cart-plus mr-1"></i>Masukkan ke Keranjang</button>');
+  pdUpdatePrice();
+  openModal('modal-product');
+}
+function pdQty(d) {
+  var p = catalog.find(function(x){ return x.id === detailPid; });
+  if (!p) return;
+  detailQty = Math.max(1, Math.min(999, detailQty + d));
+  if (detailQty > Number(p.stock || 0)) { detailQty = Number(p.stock || 0); showToast('Stok tersisa ' + p.stock + ' ' + p.baseUnit, 'error'); }
+  document.getElementById('pd-qty').innerText = detailQty;
+  pdUpdatePrice();
+}
+function pdUpdatePrice() {
+  var p = catalog.find(function(x){ return x.id === detailPid; });
+  if (!p) return;
+  var unit = document.getElementById('pd-unit').value;
+  var price = (p.prices && p.prices[unit]) || 0;
+  document.getElementById('pd-subtotal').innerText = 'Subtotal: ' + fmtRp(price * detailQty);
+}
+function pdAddToCart() {
+  var p = catalog.find(function(x){ return x.id === detailPid; });
+  if (!p) return;
+  var unit = document.getElementById('pd-unit').value;
+  var price = (p.prices && p.prices[unit]) || 0;
+  var line = cart.find(function(l){ return l.productId === detailPid && l.unit === unit; });
+  var inCart = line ? line.qty : 0;
+  if (inCart + detailQty > Number(p.stock || 0)) {
+    showToast('Stok tidak cukup: "' + p.name + '" tersisa ' + p.stock + ' ' + p.baseUnit, 'error');
+    return;
+  }
+  if (line) line.qty += detailQty; else cart.push({ productId: detailPid, name: p.name, unit: unit, price: price, qty: detailQty });
+  saveCart(); updateCartBadge();
+  closeModal('modal-product'); // auto close setelah masuk keranjang
+  showToast(detailQty + '× ' + p.name + ' (' + unit + ') masuk keranjang', 'ok');
 }
 function stockLeft(pid, unit) {
   var p = catalog.find(function(x){ return x.id === pid; });
