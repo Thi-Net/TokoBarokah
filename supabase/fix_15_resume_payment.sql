@@ -52,7 +52,7 @@ declare
   v_cid text := _shop_auth(p_token);
   v_order record;
   v_pay record;
-  v_age hours interval;
+  v_age interval;
 begin
   if v_cid is null then return json_build_object('ok', false, 'message', 'Sesi tidak valid.'); end if;
   select * into v_order from orders where id = p_order_id and customer_id = v_cid;
