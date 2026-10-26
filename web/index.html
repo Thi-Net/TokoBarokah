@@ -762,7 +762,7 @@
         }
 
         // ==== PESANAN ONLINE (marketplace admin) ====
-        const SHOP_STATUS_FLOW = { pending: ['paid','cancelled'], paid: ['processing','cancelled'], processing: ['ready','cancelled'], ready: ['completed'], completed: [], cancelled: [] };
+        const SHOP_STATUS_FLOW = { pending: ['paid','cancelled'], paid: ['processing','cancelled'], processing: ['ready','shipped','cancelled'], ready: ['completed'], shipped: ['completed'], completed: [], cancelled: [] };
 
         async function loadShopOrders() {
             const pin = (document.getElementById('admin-pin').value || '').trim();
@@ -799,6 +799,7 @@
                         <span class="text-xs font-bold px-2 py-1 rounded bg-slate-100">${o.status}</span>
                     </div>
                     <p class="text-xs text-slate-500 mt-1">Pelanggan: ${cust.name || o.customer_id} (${cust.phone || '-'}) • ${new Date(o.created_at).toLocaleString('id-ID')}</p>
+                    <p class="text-xs mt-1">${o.fulfillment === 'delivery' ? '<span class="font-bold text-cyan-700">🛵 KIRIM</span> ' + (o.delivery_slot || '') + ' ' + (o.delivery_date || '') + ' — ' + (o.address || '') + (o.location_lat ? ' <a class="text-blue-600 underline" target="_blank" href="https://maps.google.com/?q=' + o.location_lat + ',' + o.location_lng + '">📍 lokasi</a>' : '') : '<span class="font-bold text-emerald-700">🏪 AMBIL DI TOKO</span>'}</p>
                     <p class="text-sm mt-1">${oi.map(i => `${i.product_id} <span class="text-slate-400">${i.unit}×${i.qty}</span>`).join(', ')}</p>
                     <div class="flex justify-between items-center mt-2 flex-wrap gap-2">
                         <b class="text-emerald-700">Rp ${Number(o.total).toLocaleString('id-ID')}</b>

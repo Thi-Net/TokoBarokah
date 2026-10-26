@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Toko Barokah — Belanja Online</title>
+<title>Toko Barokah Bu Tadi — Belanja Online</title>
 <script src="../libs/tailwind.js"></script>
 <link rel="stylesheet" href="../libs/fontawesome.css">
 <style>
@@ -22,7 +22,10 @@
 <!-- HEADER -->
 <header class="bg-emerald-600 text-white sticky top-0 z-40 shadow-lg">
   <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-    <h1 class="font-extrabold text-lg"><i class="fa-solid fa-store mr-2"></i>Toko Barokah</h1>
+    <div>
+      <h1 class="font-extrabold text-lg leading-tight"><i class="fa-solid fa-store mr-2"></i>Toko Barokah Bu Tadi</h1>
+      <p class="text-[11px] text-emerald-100 font-medium"><i class="fa-solid fa-clock mr-1"></i>Buka setiap hari 06.00–21.00 WIB</p>
+    </div>
     <div class="flex items-center gap-2">
       <button id="btn-cart" onclick="openCart()" class="relative bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-bold px-4 py-2 rounded-xl text-sm">
         <i class="fa-solid fa-cart-shopping mr-1"></i>Keranjang
@@ -35,24 +38,24 @@
 
 <!-- CATALOG -->
 <main class="max-w-3xl mx-auto px-4 py-4 pb-32">
-  <input id="search" oninput="renderCatalog()" type="search" placeholder="Cari produk..." class="w-full bg-white border border-slate-200 focus:border-emerald-500 rounded-xl px-4 py-3 text-sm mb-4">
+  <input id="search" oninput="renderCatalog()" type="search" placeholder="Cari produk..." class="w-full bg-white border border-slate-200 focus:border-emerald-500 rounded-xl px-4 py-3 text-sm mb-3">
+  <!-- CHIP KATEGORI -->
+  <div id="cat-chips" class="flex gap-2 overflow-x-auto pb-2 mb-4" style="scrollbar-width:none"></div>
   <div id="catalog" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
 </main>
 
 <!-- MODAL LOGIN/OTP -->
-<div id="modal-auth" class="fixed inset-0 bg-slate-900/70 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+<div id="modal-auth" class="fixed inset-0 bg-slate-900/70 z-50 hidden items-center justify-center p-4 backdrop-blur-sm">
   <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 fade">
     <div class="flex justify-between items-center mb-4">
       <h2 id="auth-title" class="font-extrabold text-lg">Masuk / Daftar</h2>
       <button onclick="closeModal('modal-auth')" class="text-slate-400 hover:text-rose-500 text-xl"><i class="fa-solid fa-xmark"></i></button>
     </div>
-    <!-- step 1: phone -->
     <div id="auth-step-phone">
       <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nomor HP / WhatsApp</label>
       <input id="auth-phone" type="tel" inputmode="numeric" placeholder="08xxxxxxxxxx" class="w-full border border-slate-300 focus:border-emerald-500 rounded-xl px-4 py-3 mb-3">
       <button onclick="requestOtp()" id="btn-otp" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3 rounded-xl">Kirim OTP</button>
     </div>
-    <!-- step 2: otp -->
     <div id="auth-step-otp" class="hidden">
       <p class="text-sm text-slate-600 mb-2">Masukkan 6 digit OTP. <span class="text-xs">(Mode demo: OTP tampil setelah kirim)</span></p>
       <input id="auth-otp" type="numeric" inputmode="numeric" maxlength="6" placeholder="______" class="w-full border border-slate-300 focus:border-emerald-500 rounded-xl px-4 py-3 mb-2 text-center text-xl tracking-widest font-bold">
@@ -65,7 +68,7 @@
 </div>
 
 <!-- MODAL KERANJANG -->
-<div id="modal-cart" class="fixed inset-0 bg-slate-900/70 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+<div id="modal-cart" class="fixed inset-0 bg-slate-900/70 z-50 hidden items-center justify-center p-4 backdrop-blur-sm">
   <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 max-h-[85vh] overflow-y-auto fade">
     <div class="flex justify-between items-center mb-4">
       <h2 class="font-extrabold text-lg">Keranjang</h2>
@@ -76,21 +79,56 @@
       <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Catatan (opsional)</label>
       <input id="order-note" type="text" placeholder="Contoh: tolong yang dong sabun 2" class="w-full border border-slate-300 rounded-xl px-4 py-2 text-sm">
     </div>
+    <!-- AMBIL DI TOKO / DIKIRIM -->
+    <div class="border-t pt-3 mb-3">
+      <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Pengambilan</label>
+      <div class="grid grid-cols-2 gap-2 mb-3">
+        <button id="ful-pickup" onclick="setFulfillment('pickup')" class="border-2 rounded-xl py-3 font-bold text-sm">🏪 Ambil di Toko</button>
+        <button id="ful-delivery" onclick="setFulfillment('delivery')" class="border-2 rounded-xl py-3 font-bold text-sm">🛵 Dikirim</button>
+      </div>
+      <div id="delivery-fields" class="hidden space-y-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Alamat lengkap <span class="text-rose-500">*</span></label>
+          <textarea id="deliv-address" rows="2" placeholder="Nama penerima, alamat, patokan" class="w-full border border-slate-300 rounded-xl px-4 py-2 text-sm"></textarea>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Lokasi (opsional, biar akurat)</label>
+          <button onclick="pickLocation()" id="btn-loc" type="button" class="w-full bg-blue-50 border border-blue-200 text-blue-700 font-bold py-2.5 rounded-xl text-sm"><i class="fa-solid fa-location-crosshairs mr-1.5"></i><span id="loc-label">Ambil Lokasi GPS</span></button>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Jadwal kirim</label>
+            <select id="deliv-date" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Slot jam</label>
+            <select id="deliv-slot" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm">
+              <option value="06.00-09.00">06.00–09.00</option>
+              <option value="09.00-12.00">09.00–12.00</option>
+              <option value="12.00-15.00">12.00–15.00</option>
+              <option value="15.00-18.00">15.00–18.00</option>
+              <option value="18.00-21.00">18.00–21.00</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
     <div class="flex justify-between font-extrabold text-lg mb-4"><span>Total</span><span id="cart-total">Rp0</span></div>
     <button onclick="checkout()" id="btn-checkout" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3 rounded-xl">Checkout</button>
   </div>
 </div>
 
-<!-- MODAL PEMBAYARAN (DEMO) -->
-<div id="modal-pay" class="fixed inset-0 bg-slate-900/70 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+<!-- MODAL PEMBAYARAN -->
+<div id="modal-pay" class="fixed inset-0 bg-slate-900/70 z-50 hidden items-center justify-center p-4 backdrop-blur-sm">
   <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 max-h-[85vh] overflow-y-auto fade">
     <div class="flex justify-between items-center mb-4">
       <h2 class="font-extrabold text-lg">Pembayaran</h2>
       <button onclick="closeModal('modal-pay')" class="text-slate-400 hover:text-rose-500 text-xl"><i class="fa-solid fa-xmark"></i></button>
     </div>
-    <div id="pay-choices" class="grid grid-cols-2 gap-3 mb-4">
-      <button onclick="createPayment('transfer')" class="bg-blue-50 border-2 border-blue-300 hover:border-blue-500 rounded-xl py-4 font-bold text-blue-700"><i class="fa-solid fa-building-columns mr-2"></i>Transfer</button>
-      <button onclick="createPayment('qris')" class="bg-purple-50 border-2 border-purple-300 hover:border-purple-500 rounded-xl py-4 font-bold text-purple-700"><i class="fa-solid fa-qrcode mr-2"></i>QRIS</button>
+    <div id="pay-choices" class="grid grid-cols-3 gap-2 mb-4">
+      <button onclick="createPayment('cod')" class="bg-amber-50 border-2 border-amber-300 hover:border-amber-500 rounded-xl py-4 font-bold text-amber-700 text-sm"><i class="fa-solid fa-money-bill-wave mr-1"></i>COD</button>
+      <button onclick="createPayment('transfer')" class="bg-blue-50 border-2 border-blue-300 hover:border-blue-500 rounded-xl py-4 font-bold text-blue-700 text-sm"><i class="fa-solid fa-building-columns mr-1"></i>Transfer</button>
+      <button onclick="createPayment('qris')" class="bg-purple-50 border-2 border-purple-300 hover:border-purple-500 rounded-xl py-4 font-bold text-purple-700 text-sm"><i class="fa-solid fa-qrcode mr-1"></i>QRIS</button>
     </div>
     <div id="pay-detail" class="hidden border rounded-xl p-4 bg-slate-50">
       <div id="pay-info" class="text-sm space-y-1 mb-4"></div>
@@ -101,7 +139,7 @@
 </div>
 
 <!-- MODAL AKUN / PESANAN -->
-<div id="modal-account" class="fixed inset-0 bg-slate-900/70 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+<div id="modal-account" class="fixed inset-0 bg-slate-900/70 z-50 hidden items-center justify-center p-4 backdrop-blur-sm">
   <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 max-h-[85vh] overflow-y-auto fade">
     <div class="flex justify-between items-center mb-4">
       <h2 class="font-extrabold text-lg">Akun & Pesanan</h2>
@@ -125,13 +163,19 @@
 var SB_URL = localStorage.getItem('kpos_sb_url') || 'https://zosdcuiulgpjevgbyquw.supabase.co';
 var SB_KEY = localStorage.getItem('kpos_sb_key') || 'sb_publishable_ZyeF0KWUjAuH9quXYELRuw_HlDDlBo0';
 var SESSION_KEY = 'shop_session_v1';
+var CART_KEY = 'shop_cart_v1';
 
 var session = null;
 try { session = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch(e) { session = null; }
+// keranjang persist: tidak hilang saat checkout belum dibayar
+try { cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]'); } catch(e) { cart = []; }
 var catalog = [];
-var cart = [];
+var cart = cart || [];
 var currentPayment = null;
 var pendingPhone = '';
+var activeCat = '';
+var fulfillment = 'pickup';
+var geoPos = null;
 
 function rpc(fn, args) {
   return fetch(SB_URL + '/rest/v1/rpc/' + fn, {
@@ -149,24 +193,40 @@ function showToast(msg, type) {
   t.classList.remove('hidden');
   clearTimeout(window._tt); window._tt = setTimeout(function(){ t.classList.add('hidden'); }, 3500);
 }
-function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); }
+function openModal(id) { document.getElementById(id).classList.remove('hidden'); document.getElementById(id).classList.add('flex'); }
+function saveCart() { try { localStorage.setItem(CART_KEY, JSON.stringify(cart)); } catch(e){} }
 
 // ================== CATALOG ==================
 function loadCatalog() {
   rpc('shop_catalog').then(function(res) {
     catalog = (res && res.length !== undefined) ? res : [];
+    renderChips();
     renderCatalog();
   }).catch(function(e) { showToast('Gagal memuat katalog: ' + e, 'error'); });
 }
+function renderChips() {
+  var cats = [];
+  catalog.forEach(function(p){ if (p.category && cats.indexOf(p.category) < 0) cats.push(p.category); });
+  cats.sort();
+  var box = document.getElementById('cat-chips');
+  box.innerHTML = ['<button onclick="setCat(\'\')" class="chip ' + (!activeCat ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600') + ' border border-slate-200 font-bold text-xs px-4 py-2 rounded-full whitespace-nowrap">Semua</button>']
+    .concat(cats.map(function(c) {
+      return '<button onclick="setCat(\'' + c.replace(/'/g,"\\'") + '\')" class="chip ' + (activeCat === c ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600') + ' border border-slate-200 font-bold text-xs px-4 py-2 rounded-full whitespace-nowrap">' + c + '</button>';
+    })).join('');
+}
+function setCat(c) { activeCat = c; renderChips(); renderCatalog(); }
 function renderCatalog() {
   var q = (document.getElementById('search').value || '').toLowerCase();
   var box = document.getElementById('catalog');
-  var list = catalog.filter(function(p){ return !q || p.name.toLowerCase().indexOf(q) >= 0; });
+  var list = catalog.filter(function(p){
+    var okQ = !q || p.name.toLowerCase().indexOf(q) >= 0;
+    var okC = !activeCat || p.category === activeCat;
+    return okQ && okC;
+  });
   if (!list.length) { box.innerHTML = '<p class="text-slate-400 text-sm col-span-full text-center py-8">Tidak ada produk.</p>'; return; }
   box.innerHTML = list.map(function(p) {
     var firstUnit = (p.units && p.units[0]) || p.baseUnit;
-    var price = p.prices ? (p.prices[firstUnit] || Object.values(p.prices)[0] || 0) : 0;
     var unitOpts = (p.units || []).map(function(u) {
       return '<option value="' + u + '"' + (u === firstUnit ? ' selected' : '') + '>' + u + ' — ' + fmtRp(p.prices ? p.prices[u] : 0) + '</option>';
     }).join('');
@@ -182,13 +242,22 @@ function renderCatalog() {
       '</div>';
   }).join('');
 }
+function stockLeft(pid, unit) {
+  var p = catalog.find(function(x){ return x.id === pid; });
+  return p ? Number(p.stock || 0) : 0;
+}
 function addToCart(pid) {
   var p = catalog.find(function(x){ return x.id === pid; });
   var unit = document.getElementById('unit-' + pid).value;
   var price = p.prices[unit] || 0;
   var line = cart.find(function(l){ return l.productId === pid && l.unit === unit; });
+  var inCart = line ? line.qty : 0;
+  if (inCart + 1 > Number(p.stock || 0)) {
+    showToast('Stok tidak cukup: "' + p.name + '" tersisa ' + p.stock + ' ' + p.baseUnit, 'error');
+    return;
+  }
   if (line) line.qty += 1; else cart.push({ productId: pid, name: p.name, unit: unit, price: price, qty: 1 });
-  updateCartBadge(); showToast(p.name + ' (' + unit + ') masuk keranjang', 'ok');
+  saveCart(); updateCartBadge(); showToast(p.name + ' (' + unit + ') masuk keranjang', 'ok');
 }
 function updateCartBadge() {
   var n = cart.reduce(function(a, l){ return a + l.qty; }, 0);
@@ -202,9 +271,12 @@ function renderCart() {
   var box = document.getElementById('cart-items');
   if (!cart.length) { box.innerHTML = '<p class="text-slate-400 text-sm text-center py-4">Keranjang kosong.</p>'; }
   else box.innerHTML = cart.map(function(l, i) {
+    var left = stockLeft(l.productId, l.unit);
+    var over = l.qty > left;
     return '<div class="flex items-center justify-between bg-slate-50 rounded-xl px-3 py-2">' +
       '<div class="text-sm"><b>' + l.name + '</b> <span class="text-slate-400 text-xs">' + l.unit + '</span>' +
-      '<p class="text-xs text-slate-500">' + fmtRp(l.price) + ' × ' + l.qty + '</p></div>' +
+      '<p class="text-xs text-slate-500">' + fmtRp(l.price) + ' × ' + l.qty +
+      (over ? ' <span class="text-rose-500 font-bold">stok sisa ' + left + '!</span>' : '') + '</p></div>' +
       '<div class="flex items-center gap-2">' +
       '<button onclick="chQty(' + i + ',-1)" class="w-8 h-8 bg-slate-200 rounded-lg font-bold">−</button>' +
       '<span class="font-bold w-6 text-center">' + l.qty + '</span>' +
@@ -213,32 +285,89 @@ function renderCart() {
   document.getElementById('cart-total').innerText = fmtRp(cart.reduce(function(a, l){ return a + l.price * l.qty; }, 0));
 }
 function chQty(i, d) {
+  if (d > 0) {
+    var left = stockLeft(cart[i].productId, cart[i].unit);
+    if (cart[i].qty + 1 > left) { showToast('Stok tidak cukup: tersisa ' + left, 'error'); return; }
+  }
   cart[i].qty += d;
   if (cart[i].qty <= 0) cart.splice(i, 1);
-  updateCartBadge(); renderCart();
+  saveCart(); updateCartBadge(); renderCart();
+}
+
+// ================== FULFILLMENT ==================
+function setFulfillment(f) {
+  fulfillment = f;
+  var on = 'border-emerald-600 bg-emerald-50 text-emerald-700';
+  var off = 'border-slate-200 bg-white text-slate-500';
+  document.getElementById('ful-pickup').className = 'border-2 rounded-xl py-3 font-bold text-sm ' + (f === 'pickup' ? on : off);
+  document.getElementById('ful-delivery').className = 'border-2 rounded-xl py-3 font-bold text-sm ' + (f === 'delivery' ? on : off);
+  document.getElementById('delivery-fields').classList.toggle('hidden', f !== 'delivery');
+}
+function fillDeliveryDates() {
+  var sel = document.getElementById('deliv-date');
+  var opts = [];
+  var days = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+  var now = new Date();
+  var todayStr = now.toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'short' });
+  opts.push('<option value="' + now.toISOString().slice(0,10) + '">Hari ini — ' + todayStr + '</option>');
+  for (var i = 1; i <= 6; i++) {
+    var d = new Date(now.getTime() + i*86400000);
+    opts.push('<option value="' + d.toISOString().slice(0,10) + '">' + days[d.getDay()] + ', ' + d.toLocaleDateString('id-ID',{day:'numeric',month:'short'}) + '</option>');
+  }
+  sel.innerHTML = opts.join('');
+}
+function pickLocation() {
+  if (!navigator.geolocation) { showToast('GPS tidak didukung browser ini', 'error'); return; }
+  var btn = document.getElementById('btn-loc');
+  btn.disabled = true; document.getElementById('loc-label').innerText = 'Mengambil lokasi...';
+  navigator.geolocation.getCurrentPosition(function(pos) {
+    geoPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+    btn.disabled = false;
+    document.getElementById('loc-label').innerText = '✓ Lokasi terkunci (' + geoPos.lat.toFixed(5) + ', ' + geoPos.lng.toFixed(5) + ')';
+  }, function(err) {
+    btn.disabled = false;
+    document.getElementById('loc-label').innerText = 'Ambil Lokasi GPS';
+    showToast('Gagal ambil lokasi: ' + err.message + ' (isi alamat manual saja)', 'error');
+  }, { enableHighAccuracy: true, timeout: 12000 });
 }
 
 // ================== CHECKOUT ==================
 function checkout() {
   if (!session) { closeAll(); openAuth(); return; }
   if (!cart.length) { showToast('Keranjang kosong', 'error'); return; }
-  var btn = document.getElementById('btn-checkout');
-  btn.disabled = true; btn.innerText = 'Mengirim...';
-  rpc('shop_create_order', {
+  // guard stok sebelum kirim (tetap divalidasi ulang di server)
+  for (var i = 0; i < cart.length; i++) {
+    var left = stockLeft(cart[i].productId, cart[i].unit);
+    if (cart[i].qty > left) { showToast('Stok "' + cart[i].name + '" tidak cukup (sisa ' + left + ')', 'error'); return; }
+  }
+  var payload = {
     p_token: session.token,
     p_items: cart.map(function(l){ return { productId: l.productId, unit: l.unit, qty: l.qty }; }),
     p_note: document.getElementById('order-note').value || '',
-    p_name: session.name || ''
-  }).then(function(res) {
+    p_name: session.name || '',
+    p_fulfillment: fulfillment
+  };
+  if (fulfillment === 'delivery') {
+    var addr = (document.getElementById('deliv-address').value || '').trim();
+    if (!addr) { showToast('Alamat lengkap wajib diisi untuk pengiriman', 'error'); return; }
+    payload.p_address = addr;
+    payload.p_delivery_date = document.getElementById('deliv-date').value;
+    payload.p_delivery_slot = document.getElementById('deliv-slot').value;
+    if (geoPos) { payload.p_lat = geoPos.lat; payload.p_lng = geoPos.lng; }
+  }
+  var btn = document.getElementById('btn-checkout');
+  btn.disabled = true; btn.innerText = 'Mengirim...';
+  rpc('shop_create_order', payload).then(function(res) {
     btn.disabled = false; btn.innerText = 'Checkout';
     if (!res.ok) { showToast(res.message || 'Gagal', 'error'); return; }
-    cart = []; updateCartBadge(); closeAll();
+    // KERANJANG TIDAK DIKOSONGKAN di sini — dikosongkan hanya setelah bayar sukses
     currentOrder = { id: res.orderId, total: res.total };
+    closeAll();
     openPay(res.orderId, res.total);
   }).catch(function(e) { btn.disabled = false; btn.innerText = 'Checkout'; showToast('Gagal: ' + e, 'error'); });
 }
 
-// ================== PAYMENT DEMO ==================
+// ================== PAYMENT ==================
 var currentOrder = null;
 function openPay(orderId, total) {
   currentOrder = { id: orderId, total: total };
@@ -250,11 +379,18 @@ function createPayment(method) {
   rpc('shop_create_payment', { p_token: session.token, p_order_id: currentOrder.id, p_method: method })
   .then(function(res) {
     if (!res.ok) { showToast(res.message, 'error'); return; }
+    if (res.cod) {
+      // COD: langsung lunas-status, keranjang dikosongkan
+      clearCart();
+      closeModal('modal-pay');
+      showToast('✓ ' + res.message, 'ok');
+      return;
+    }
     currentPayment = res;
     document.getElementById('pay-choices').classList.add('hidden');
     document.getElementById('pay-detail').classList.remove('hidden');
     document.getElementById('pay-info').innerHTML =
-      '<p><b>Order:</b> ' + res.paymentId ? '' : '' + '</p>' +
+      '<p><b>Order:</b> ' + currentOrder.id + '</p>' +
       '<p><b>Metode:</b> ' + (method === 'qris' ? 'QRIS (demo)' : 'Transfer bank (demo)') + '</p>' +
       '<p><b>Nomor VA:</b> <span class="font-mono font-bold">' + res.vaNumber + '</span></p>' +
       '<p><b>Nominal:</b> ' + fmtRp(res.amount) + '</p>';
@@ -267,16 +403,20 @@ function simulatePay() {
   .then(function(res) {
     btn.disabled = false; btn.innerText = 'Simulasikan Bayar (Demo)';
     if (!res.ok) { showToast(res.message, 'error'); return; }
+    clearCart();
     closeModal('modal-pay');
-    showToast('✓ Pembayaran demo berhasil — order LUNAS, menunggu dikonfirmasi toko', 'ok');
+    showToast('✓ Pembayaran berhasil — pesanan diproses toko', 'ok');
   }).catch(function(e) { btn.disabled = false; btn.innerText = 'Simulasikan Bayar (Demo)'; showToast('Gagal: ' + e, 'error'); });
 }
+function clearCart() { cart = []; saveCart(); updateCartBadge(); }
 
 // ================== AUTH ==================
 function openAuth() {
+  // tutup bubble akun dulu supaya tidak menimpa (issue #7)
+  closeModal('modal-account');
   document.getElementById('auth-step-phone').classList.remove('hidden');
   document.getElementById('auth-step-otp').classList.add('hidden');
-  openModal('modal-auth');
+  setTimeout(function(){ document.getElementById('modal-auth').classList.remove('hidden'); document.getElementById('modal-auth').classList.add('flex'); }, 60);
 }
 function closeAll() {
   ['modal-auth','modal-cart','modal-pay','modal-account'].forEach(closeModal);
@@ -324,12 +464,16 @@ function updateAccountUI() {
 function loadMyOrders() {
   rpc('shop_my_orders', { p_token: session.token }).then(function(res) {
     if (!res.ok) { showToast(res.message, 'error'); return; }
-    var statusBadge = { pending:'bg-amber-100 text-amber-700', paid:'bg-blue-100 text-blue-700', processing:'bg-indigo-100 text-indigo-700', ready:'bg-emerald-100 text-emerald-700', completed:'bg-slate-200 text-slate-600', cancelled:'bg-rose-100 text-rose-700' };
+    var statusBadge = { pending:'bg-amber-100 text-amber-700', paid:'bg-blue-100 text-blue-700', processing:'bg-indigo-100 text-indigo-700', ready:'bg-emerald-100 text-emerald-700', shipped:'bg-cyan-100 text-cyan-700', completed:'bg-slate-200 text-slate-600', cancelled:'bg-rose-100 text-rose-700' };
     document.getElementById('my-orders').innerHTML = res.orders.length ? res.orders.map(function(o) {
       var items = (res.items || []).filter(function(i){ return i.order_id === o.id; });
+      var ful = o.fulfillment === 'delivery'
+        ? '🛵 Kirim ' + (o.delivery_slot || '') + ' ' + (o.delivery_date || '')
+        : '🏪 Ambil di toko';
       return '<div class="border rounded-xl p-3">' +
         '<div class="flex justify-between items-center"><b class="text-sm">' + o.id + '</b>' +
         '<span class="text-xs font-bold px-2 py-1 rounded ' + (statusBadge[o.status] || '') + '">' + o.status + '</span></div>' +
+        '<p class="text-xs text-slate-400 mt-1">' + ful + '</p>' +
         '<p class="text-xs text-slate-500 mt-1">' + items.map(function(i){ return i.product_id + ' ' + i.unit + '×' + i.qty; }).join(', ') + '</p>' +
         '<p class="font-bold text-sm mt-1">' + fmtRp(o.total) + '</p>' +
         (o.status === 'pending' ? '<button onclick="cancelOrder(\'' + o.id + '\')" class="mt-2 text-xs font-bold text-rose-600">Batalkan</button>' : '') +
@@ -351,6 +495,8 @@ function logout() {
 
 // init
 updateAccountUI();
+setFulfillment('pickup');
+fillDeliveryDates();
 loadCatalog();
 </script>
 </body>
