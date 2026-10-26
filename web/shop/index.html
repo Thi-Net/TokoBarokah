@@ -126,8 +126,8 @@
     </div>
     <div id="pay-detail" class="hidden border rounded-xl p-4 bg-slate-50">
       <div id="pay-info" class="text-sm space-y-1 mb-4"></div>
-      <p class="text-xs text-slate-500 mb-3"><i class="fa-solid fa-circle-info mr-1"></i>Mode DEMO — tidak ada uang nyata. Klik simulasi untuk menandai lunas.</p>
-      <button onclick="simulatePay()" id="btn-simpay" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3 rounded-xl">Simulasikan Bayar (Demo)</button>
+      <button onclick="goMayar()" id="btn-mayar" class="hidden w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3 rounded-xl">Bayar Sekarang</button>
+      <p class="text-xs text-slate-500 mb-3 mt-2"><i class="fa-solid fa-circle-info mr-1"></i>Kamu akan diarahkan ke halaman pembayaran aman (Mayar). Status pesanan otomatis diperbarui setelah pembayaran berhasil.</p>
     </div>
   </div>
 </div>
@@ -395,37 +395,71 @@ function openPay(orderId, total) {
   openModal('modal-pay');
 }
 function createPayment(method) {
-  rpc('shop_create_payment', { p_token: session.token, p_order_id: currentOrder.id, p_method: method })
-  .then(function(res) {
-    if (!res.ok) { showToast(res.message, 'error'); return; }
-    if (res.cod) {
-      // COD: langsung lunas-status, keranjang dikosongkan
+  if (method === 'cod') {
+    rpc('shop_create_payment', { p_token: session.token, p_order_id: currentOrder.id, p_method: 'cod' })
+    .then(function(res) {
+      if (!res.ok) { showToast(res.message, 'error'); return; }
       clearCart();
       closeModal('modal-pay');
       showToast('✓ ' + res.message, 'ok');
-      return;
-    }
-    currentPayment = res;
+    }).catch(function(e) { showToast('Gagal: ' + e, 'error'); });
+    return;
+  }
+  // Transfer/QRIS -> Mayar via Edge Function (tidak ada kunci di frontend)
+  var btnM = document.getElementById('btn-mayar');
+  if (btnM) { btnM.disabled = true; btnM.innerText = 'Membuat tagihan...'; }
+  fetch(SB_URL + '/functions/v1/mayar-create', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token: session.token, orderId: currentOrder.id, method: method })
+  }).then(function(r) { return r.json(); }).then(function(res) {
+    if (btnM) { btnM.disabled = false; btnM.innerText = 'Bayar Sekarang'; }
+    if (!res.ok) { showToast(res.message || 'Gagal membuat tagihan', 'error'); return; }
+    currentPayment = { paymentId: res.paymentId, amount: res.amount, method: method, mayarLink: res.link };
     document.getElementById('pay-choices').classList.add('hidden');
     document.getElementById('pay-detail').classList.remove('hidden');
+    document.getElementById('btn-mayar').classList.remove('hidden');
     document.getElementById('pay-info').innerHTML =
       '<p><b>Order:</b> ' + currentOrder.id + '</p>' +
-      '<p><b>Metode:</b> ' + (method === 'qris' ? 'QRIS (demo)' : 'Transfer bank (demo)') + '</p>' +
-      '<p><b>Nomor VA:</b> <span class="font-mono font-bold">' + res.vaNumber + '</span></p>' +
-      '<p><b>Nominal:</b> ' + fmtRp(res.amount) + '</p>';
-  }).catch(function(e) { showToast('Gagal: ' + e, 'error'); });
+      '<p><b>Metode:</b> ' + (method === 'qris' ? 'QRIS' : 'Transfer bank') + '</p>' +
+      '<p><b>Nominal:</b> ' + fmtRp(res.amount) + '</p>' +
+      '<p class="text-slate-500">Selesaikan pembayaran, lalu kembali ke halaman ini. Status pesanan otomatis diperbarui.</p>';
+  }).catch(function(e) {
+    if (btnM) { btnM.disabled = false; btnM.innerText = 'Bayar Sekarang'; }
+    showToast('Gagal: ' + e, 'error');
+  });
 }
-function simulatePay() {
-  var btn = document.getElementById('btn-simpay');
-  btn.disabled = true; btn.innerText = 'Memproses...';
-  rpc('shop_pay_demo', { p_token: session.token, p_payment_id: currentPayment.paymentId })
-  .then(function(res) {
-    btn.disabled = false; btn.innerText = 'Simulasikan Bayar (Demo)';
-    if (!res.ok) { showToast(res.message, 'error'); return; }
-    clearCart();
-    closeModal('modal-pay');
-    showToast('✓ Pembayaran berhasil — pesanan diproses toko', 'ok');
-  }).catch(function(e) { btn.disabled = false; btn.innerText = 'Simulasikan Bayar (Demo)'; showToast('Gagal: ' + e, 'error'); });
+function goMayar() {
+  if (!currentPayment || !currentPayment.mayarLink) { showToast('Tagihan belum dibuat', 'error'); return; }
+  window.open(currentPayment.mayarLink, '_blank');
+  startPaymentPolling();
+}
+// Polling status order: setelah user kembali dari halaman Mayar, cek apakah
+// webhook sudah mengonfirmasi. UX sukses sama seperti mode demo.
+var pollTimer = null;
+var pollCount = 0;
+function startPaymentPolling() {
+  stopPaymentPolling();
+  pollCount = 0;
+  pollTimer = setInterval(checkPaymentStatus, 5000);
+  checkPaymentStatus();
+}
+function stopPaymentPolling() { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } }
+function checkPaymentStatus() {
+  if (!session || !currentOrder) { stopPaymentPolling(); return; }
+  pollCount++;
+  if (pollCount > 120) { stopPaymentPolling(); return; } // berhenti setelah ~10 menit
+  rpc('shop_my_orders', { p_token: session.token }).then(function(res) {
+    var orders = (res && res.orders) ? res.orders : [];
+    var mine = null;
+    for (var i = 0; i < orders.length; i++) { if (orders[i].id === currentOrder.id) { mine = orders[i]; break; } }
+    if (mine && mine.status !== 'pending') {
+      stopPaymentPolling();
+      clearCart();
+      closeModal('modal-pay');
+      showToast('✓ Pembayaran berhasil — pesanan diproses toko', 'ok');
+    }
+  }).catch(function() { /* coba lagi di tick berikutnya */ });
 }
 function clearCart() { cart = []; saveCart(); updateCartBadge(); }
 
