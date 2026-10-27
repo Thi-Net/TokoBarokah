@@ -1,5 +1,5 @@
 {
-  "appVersion": "2.6",
-  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.6/KelontongPOS-v2.6.apk",
-  "notes": "Fix header laporan Excel: sheet Penjualan (HPP & Laba Kotor) dan Pembelian (urutan kolom)"
+  "appVersion": "2.6.1",
+  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.6.1/KelontongPOS-v2.6.1.apk",
+  "notes": "Laporan Excel: kolom Invoice kembali di sheet Pembelian + kolom Harga Satuan di sheet Penjualan"
 }

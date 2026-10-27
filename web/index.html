@@ -577,8 +577,8 @@
             google.script.run.withSuccessHandler(r => {
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["LAPORAN KEUANGAN"], ["Periode", r.periodName], ["Rentang", r.dateRange], [], ["Keterangan", "Jumlah"], ["Omzet", (r.finance?r.finance.sales:r.sales)||0], ["HPP", (r.finance?r.finance.hpp:r.hpp)||0], ["Laba Kotor", (r.finance?r.finance.grossProfit:r.grossProfit)||0], ["Pengeluaran", (r.finance?r.finance.expenses:r.expenses)||0], ["Laba Bersih", (r.finance?r.finance.netProfit:r.netProfit)||0]]), "Laba Rugi");
-                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["ID", "Waktu", "Produk", "Satuan", "Qty", "Omzet", "HPP", "Laba Kotor"], ...r.rawSales]), "Penjualan");
-                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["ID", "Waktu", "Produk", "Satuan", "Qty", "Total Harga", "Supplier"], ...r.rawPurchases]), "Pembelian");
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["ID", "Waktu", "Produk", "Satuan", "Qty", "Harga Satuan", "Omzet", "HPP", "Laba Kotor"], ...r.rawSales]), "Penjualan");
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["ID", "Waktu", "Supplier", "Invoice", "Produk", "Satuan", "Qty", "Total Harga"], ...r.rawPurchases]), "Pembelian");
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["ID", "Waktu", "Kategori", "Deskripsi", "Jumlah", "Metode"], ...r.rawExpenses]), "Pengeluaran");
                 
                 const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
