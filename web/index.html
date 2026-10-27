@@ -112,7 +112,6 @@
                 <button onclick="switchTab('keuangan', this)" class="nav-item w-full flex items-center space-x-3 px-4 py-3 min-h-[46px] rounded-xl transition active:scale-[0.98] text-slate-600 hover:bg-slate-50 font-medium text-sm"><i class="fa-solid fa-wallet w-5 text-center"></i><span class="text-left flex-1">Pengeluaran</span></button>
                 <button onclick="switchTab('laporan', this)" class="nav-item w-full flex items-center space-x-3 px-4 py-3 min-h-[46px] rounded-xl transition active:scale-[0.98] text-slate-600 hover:bg-slate-50 font-medium text-sm"><i class="fa-solid fa-file-invoice w-5 text-center"></i><span class="text-left flex-1">Laporan Keuangan</span></button>
                 <div class="my-2 border-t border-slate-200"></div>
-                <button onclick="switchTab('pesanan', this)" class="nav-item w-full flex items-center space-x-3 px-4 py-3 min-h-[46px] rounded-xl transition active:scale-[0.98] text-slate-600 hover:bg-slate-50 font-medium text-sm"><i class="fa-solid fa-bag-shopping w-5 text-center"></i><span class="text-left flex-1">Pesanan Online</span></button>
                 <button onclick="switchTab('database', this)" class="nav-item w-full flex items-center space-x-3 px-4 py-3 min-h-[46px] rounded-xl transition active:scale-[0.98] text-indigo-700 hover:bg-indigo-50 font-bold text-sm"><i class="fa-solid fa-database w-5 text-center"></i><span class="text-left flex-1">Database Raw</span></button>
                 <button onclick="openSyncSettings()" class="nav-item w-full flex items-center space-x-3 px-4 py-3 min-h-[46px] rounded-xl transition active:scale-[0.98] text-emerald-700 hover:bg-emerald-50 font-bold text-sm"><i class="fa-solid fa-cloud w-5 text-center"></i><span class="text-left flex-1">Sinkron & Backup</span></button>
                 <button onclick="posLogout()" class="nav-item w-full flex items-center space-x-3 px-4 py-3 min-h-[46px] rounded-xl transition active:scale-[0.98] text-rose-600 hover:bg-rose-50 font-bold text-sm"><i class="fa-solid fa-right-from-bracket w-5 text-center"></i><span class="text-left flex-1">Logout</span></button>
@@ -296,22 +295,6 @@
                     </div>
                 </div>
 
-                <!-- TAB PESANAN ONLINE (marketplace admin) -->
-                <div id="tab-pesanan" class="tab-content space-y-6">
-                    <div class="bg-white rounded-2xl border border-slate-200 shadow-xs p-4">
-                        <div class="flex justify-between items-center flex-wrap gap-3 mb-4">
-                            <h3 class="font-extrabold text-slate-800"><i class="fa-solid fa-bag-shopping text-emerald-600 mr-2"></i>Pesanan Online (Marketplace)</h3>
-                            <div class="flex gap-2">
-                                <input id="admin-pin" type="password" placeholder="PIN Admin" class="border border-slate-300 rounded-lg px-3 py-2 text-sm w-32">
-                                <button onclick="loadShopOrders()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2 rounded-lg">Muat Pesanan</button>
-                            </div>
-                        </div>
-                        <div id="shop-orders-list" class="space-y-3">
-                            <p class="text-sm text-slate-400">Masukkan PIN Admin lalu klik Muat Pesanan. Pesanan pelanggan dari toko online akan tampil di sini.</p>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- TAB DATABASE RAW -->
                 <div id="tab-database" class="tab-content space-y-6">
                     <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden flex flex-col min-h-[500px]">
@@ -430,7 +413,6 @@
             if(id === 'inventory') loadLedgerData();
             if(id === 'laporan') loadFinancialReport();
             if(id === 'database') loadDatabaseSheet('PRODUCTS', document.getElementById('btn-db-PRODUCTS'));
-            if(id === 'pesanan') { cacheCatalogForOrders(); /* data dimuat via tombol (PIN) */ }
         }
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('-translate-x-full'); }
         function formatRp(val) { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val); }
@@ -595,8 +577,8 @@
             google.script.run.withSuccessHandler(r => {
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["LAPORAN KEUANGAN"], ["Periode", r.periodName], ["Rentang", r.dateRange], [], ["Keterangan", "Jumlah"], ["Omzet", (r.finance?r.finance.sales:r.sales)||0], ["HPP", (r.finance?r.finance.hpp:r.hpp)||0], ["Laba Kotor", (r.finance?r.finance.grossProfit:r.grossProfit)||0], ["Pengeluaran", (r.finance?r.finance.expenses:r.expenses)||0], ["Laba Bersih", (r.finance?r.finance.netProfit:r.netProfit)||0]]), "Laba Rugi");
-                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["ID", "Waktu", "Produk", "Satuan", "Qty", "Omzet", "Laba Kotor"], ...r.rawSales]), "Penjualan");
-                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["ID", "Waktu", "Supplier", "Invoice", "Produk", "Satuan", "Qty Beli", "Total Harga"], ...r.rawPurchases]), "Pembelian");
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["ID", "Waktu", "Produk", "Satuan", "Qty", "Omzet", "HPP", "Laba Kotor"], ...r.rawSales]), "Penjualan");
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["ID", "Waktu", "Produk", "Satuan", "Qty", "Total Harga", "Supplier"], ...r.rawPurchases]), "Pembelian");
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["ID", "Waktu", "Kategori", "Deskripsi", "Jumlah", "Metode"], ...r.rawExpenses]), "Pengeluaran");
                 
                 const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
@@ -705,44 +687,12 @@
         function onScanSuccess(decodedText) {
             // Mode: scan untuk kolom barcode produk baru (tidak mencari produk)
             if (scannerTarget === 'newprod') {
-                const bc = decodedText.trim();
                 const bcEl = document.getElementById('new-prod-barcode');
-                const dupe = globalProducts.find(p => String(p.barcode || '') === bc);
+                const dupe = globalProducts.find(p => String(p.barcode || '') === decodedText.trim());
                 closeScanner();
-                if (bcEl) bcEl.value = bc;
-                if (dupe) {
-                    // Barcode sudah dipakai -> tampilkan produk & alur tambah satuan baru
-                    const prod = globalProducts.find(p => p.id === dupe.id);
-                    const units = prod && prod.units ? prod.units : [];
-                    const baseUnit = units.length ? units[0] : (prod && prod.baseUnit ? prod.baseUnit : '-');
-                    const msg = `Barcode sudah dipakai produk:\n\n- Nama: ${dupe.name}\n- ID: ${dupe.id}\n- Barcode: ${bc}\n- Satuan tersedia: ${units.join(', ') || '-'}\n\nApakah Anda ingin MENAMBAHKAN SATUAN BARU untuk produk ini?`;
-                    if (confirm(msg)) {
-                        const unitStr = prompt('Nama satuan baru (contoh: Lusin, Karton, Pak):', '');
-                        if (!unitStr || !unitStr.trim()) { alert('Batal: nama satuan kosong.'); return; }
-                        const unit = unitStr.trim();
-                        if (units.map(u => u.toLowerCase()).includes(unit.toLowerCase())) {
-                            alert(`DITOLAK: Satuan "${unit}" sudah ada untuk produk "${dupe.name}".`);
-                            return;
-                        }
-                        const convStr = prompt(`PENTING: Masukkan Nilai Konversi:\n1 ${unit} sama dengan berapa ${baseUnit}?`, '1');
-                        if (!convStr || isNaN(parseFloat(convStr))) { alert('Batal: Nilai konversi dibatalkan.'); return; }
-                        const priceStr = prompt(`Harga jual per ${unit} (Rp):`, '');
-                        const price = parseFloat(priceStr);
-                        if (isNaN(price) || price <= 0) { alert('Batal: Harga tidak valid.'); return; }
-                        showToast('Menyimpan satuan baru...', 'info');
-                        google.script.run.withSuccessHandler(r => {
-                            showToast(r && r.message ? r.message : 'Satuan baru tersimpan', 'success');
-                            document.getElementById('new-prod-barcode').value = '';
-                            loadProductsData();
-                        }).withFailureHandler(err => {
-                            showToast('GAGAL: ' + (err && err.message ? err.message : err), 'warning');
-                        }).addNewUnitToProduct({
-                            productId: dupe.id, unitName: unit, conversionRate: parseFloat(convStr), sellingPrice: price
-                        });
-                    }
-                } else {
-                    showToast('Barcode terisi: ' + bc, 'success');
-                }
+                if (bcEl) bcEl.value = decodedText.trim();
+                if (dupe) showToast('⚠ Barcode sudah dipakai produk: ' + dupe.name, 'warning');
+                else showToast('Barcode terisi: ' + decodedText.trim(), 'success');
                 return;
             }
             // cari produk berdasarkan barcode ATAU id
@@ -759,161 +709,6 @@
             const searchEl = document.getElementById(type + '-search');
             if (searchEl && prod.barcode) searchEl.value = prod.barcode + ' — ' + prod.name;
             showToast('✓ ' + prod.name + ' (Rp ' + (prod.prices[Object.keys(prod.prices)[0]] || 0).toLocaleString('id-ID') + ')', 'success');
-        }
-
-        // ==== PESANAN ONLINE (marketplace admin) ====
-        let lastCatalogCache = [];
-        function cacheCatalogForOrders() {
-            // pastikan nama produk tersedia utk rincian pesanan online
-            if (globalProducts && globalProducts.length) { lastCatalogCache = globalProducts; return; }
-            if (typeof google !== 'undefined' && google.script && google.script.run) {
-                google.script.run.withSuccessHandler(prods => { globalProducts = prods; lastCatalogCache = prods; }).getActiveProductsList();
-            }
-        }
-        function cacheCatalogForOrders() {
-            if (globalProducts && globalProducts.length) { lastCatalogCache = globalProducts; return; }
-        }
-        const SHOP_STATUS_LABEL = { pending:'Menunggu Bayar', paid:'Dibayar', processing:'Disiapkan', ready:'Siap Diambil', shipping:'Siap Dikirim', completed:'Selesai', cancelled:'Batal' };
-        function statusFlow(o) {
-            // pickup: tidak ada tahap kirim; delivery: pakai shipping
-            if (o.fulfillment === 'delivery') {
-                return { pending:['paid','cancelled'], paid:['processing','cancelled'], processing:['shipping','cancelled'], shipping:['completed'], completed:[], cancelled:[] }[o.status] || [];
-            }
-            return { pending:['paid','cancelled'], paid:['processing','cancelled'], processing:['ready','cancelled'], ready:['completed'], completed:[], cancelled:[] }[o.status] || [];
-        }
-        let lastOrdersData = null;
-
-        async function loadShopOrders() {
-            const pin = (document.getElementById('admin-pin').value || '').trim();
-            if (!pin) { showToast('Masukkan PIN Admin dulu', 'warning'); return; }
-            const box = document.getElementById('shop-orders-list');
-            box.innerHTML = '<p class="text-sm text-slate-400">Memuat...</p>';
-            try {
-                const res = await fetch((localStorage.getItem('kpos_sb_url') || '') + '/rest/v1/rpc/shop_admin_orders', {
-                    method: 'POST',
-                    headers: { 'apikey': localStorage.getItem('kpos_sb_key') || '', 'Authorization': 'Bearer ' + (localStorage.getItem('kpos_sb_key') || ''), 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ p_admin_pin: pin })
-                });
-                const data = await res.json();
-                if (!data.ok) { showToast(data.message || 'Gagal', 'warning'); box.innerHTML = '<p class="text-sm text-rose-500">' + (data.message || 'Gagal memuat') + '</p>'; return; }
-                lastOrdersData = data; renderShopOrders(data);
-            } catch (e) {
-                showToast('Gagal: ' + e, 'warning');
-                box.innerHTML = '<p class="text-sm text-rose-500">Gagal memuat: ' + e + '</p>';
-            }
-        }
-
-        function renderShopOrders(data) {
-            const box = document.getElementById('shop-orders-list');
-            const items = data.items || [];
-            if (!data.orders.length) { box.innerHTML = '<p class="text-sm text-slate-400">Belum ada pesanan online.</p>'; return; }
-            box.innerHTML = data.orders.map(o => {
-                const oi = items.filter(i => i.order_id === o.id);
-                const cust = (data.customers || []).find(c => c.id === o.customer_id) || {};
-                const nexts = statusFlow(o);
-                const btns = nexts.map(s => {
-                    const cls = s === 'cancelled' ? 'bg-rose-50 text-rose-600' : s === 'completed' ? 'bg-emerald-600 text-white' : 'bg-emerald-50 text-emerald-700';
-                    return `<button onclick="${s === 'completed' ? `confirmComplete('${o.id}')` : `setOrderStatus('${o.id}','${s}')`}" class="text-xs font-bold px-3 py-2 rounded-lg ${cls}">${SHOP_STATUS_LABEL[s] || s}</button>`;
-                }).join('');
-                const stLabel = SHOP_STATUS_LABEL[o.status] || o.status;
-                const ful = o.fulfillment === 'delivery'
-                  ? '<span class="font-bold text-cyan-700">🛵 DIKIRIM</span> ' + (o.delivery_slot || '') + ' · ' + (o.delivery_date || '') + ' — ' + (o.address || '') + (o.location_lat ? ' <a class="text-blue-600 underline" target="_blank" href="https://maps.google.com/?q=' + o.location_lat + ',' + o.location_lng + '">📍 lokasi</a>' : '')
-                  : '<span class="font-bold text-emerald-700">🏪 AMBIL DI TOKO</span>';
-                const prods = (lastCatalogCache || []);
-                const detail = oi.map(i => {
-                  const prod = prods.find(p => p.id === i.product_id);
-                  return '<tr class="border-t border-slate-100"><td class="py-1.5 pr-2">' + (prod ? prod.name : i.product_id) + '</td><td class="py-1.5 pr-2 text-slate-500">' + (i.unit_name || '-') + '</td><td class="py-1.5 pr-2 text-right">' + i.qty + '</td><td class="py-1.5 text-right">' + Number(i.price_snapshot).toLocaleString('id-ID') + '</td><td class="py-1.5 text-right font-bold">' + Number(i.subtotal).toLocaleString('id-ID') + '</td></tr>';
-                }).join('');
-                return `<div class="border rounded-xl p-3">
-                    <div class="flex justify-between items-center flex-wrap gap-2">
-                        <b class="text-sm">${o.id}</b>
-                        <span class="text-xs font-bold px-2 py-1 rounded bg-slate-100">${stLabel}</span>
-                    </div>
-                    <p class="text-xs text-slate-500 mt-1">Pelanggan: ${cust.name || o.customer_id} (${cust.phone || '-'}) • ${new Date(o.created_at).toLocaleString('id-ID')}</p>
-                    <p class="text-xs mt-1">${ful}</p>
-                    <div class="flex justify-between items-center mt-2 flex-wrap gap-2">
-                        <b class="text-emerald-700">Rp ${Number(o.total).toLocaleString('id-ID')}</b>
-                        <div class="flex gap-1 flex-wrap items-center">
-                            <button onclick="toggleOrderDetail('${o.id}')" class="text-xs font-bold px-3 py-2 rounded-lg bg-slate-100 text-slate-700">Rincian</button>
-                            ${btns || '<span class="text-xs text-slate-400">selesai ✓</span>'}
-                        </div>
-                    </div>
-                    <div id="detail-${o.id}" class="hidden mt-2 bg-slate-50 rounded-xl p-3 overflow-x-auto">
-                        <p class="text-[11px] font-bold text-slate-400 uppercase mb-1">Rincian Pesanan</p>
-                        <table class="w-full text-xs">
-                            <thead><tr class="text-slate-400 text-left"><th class="pr-2 font-bold">Produk</th><th class="pr-2 font-bold">Satuan</th><th class="pr-2 text-right font-bold">Qty</th><th class="text-right font-bold pr-2">Harga</th><th class="text-right font-bold">Subtotal</th></tr></thead>
-                            <tbody>${detail}</tbody>
-                        </table>
-                        ${o.note ? '<p class="text-xs text-slate-500 mt-2"><b>Catatan:</b> ' + o.note + '</p>' : ''}
-                        ${o.payment_method ? '<p class="text-xs text-slate-500 mt-1"><b>Metode bayar:</b> ' + o.payment_method.toUpperCase() + '</p>' : ''}
-                    </div>
-                </div>`;
-            }).join('');
-        }
-
-        function confirmComplete(orderId) {
-            const o = (lastOrdersData.orders || []).find(x => x.id === orderId);
-            if (!o) { setOrderStatus(orderId, 'completed'); return; }
-            const cust = ((lastOrdersData.customers) || []).find(c => c.id === o.customer_id) || {};
-            const items = (lastOrdersData.items || []).filter(i => i.order_id === orderId);
-            const prods = lastCatalogCache || [];
-            const rows = items.map(i => {
-                const prod = prods.find(p => p.id === i.product_id);
-                return '<tr><td class="py-1 pr-2">' + (prod ? prod.name : i.product_id) + '</td><td class="py-1 pr-2 text-slate-500">' + (i.unit_name || '-') + '</td><td class="py-1 pr-2 text-right">' + i.qty + '</td><td class="py-1 text-right font-bold">' + Number(i.subtotal).toLocaleString('id-ID') + '</td></tr>';
-            }).join('');
-            const ful = o.fulfillment === 'delivery'
-              ? '🛵 Dikirim ke: ' + (o.address || '-') + ' · ' + (o.delivery_slot || '') + ' ' + (o.delivery_date || '')
-              : '🏪 Diambil di toko';
-            const codNote = o.payment_method === 'cod' ? '<p class="text-xs text-amber-700 font-bold mt-2">⚠ COD: konfirmasi ini juga mencatat penjualan &amp; mengurangi stok.</p>' : '';
-            const html = '<div class="text-left text-sm space-y-2">' +
-              '<p><b>' + o.id + '</b> • ' + (cust.name || o.customer_id) + ' (' + (cust.phone || '-') + ')</p>' +
-              '<p class="text-xs text-slate-500">' + ful + '</p>' +
-              '<table class="w-full text-xs mt-2"><tbody>' + rows + '</tbody></table>' +
-              '<div class="flex justify-between font-bold border-t pt-2 mt-2"><span>Total</span><span class="text-emerald-700">Rp ' + Number(o.total).toLocaleString('id-ID') + '</span></div>' +
-              (o.note ? '<p class="text-xs text-slate-500"><b>Catatan:</b> ' + o.note + '</p>' : '') +
-              codNote +
-              '<p class="text-xs text-slate-500 pt-1">Tandai pesanan ini SELESAI? Tindakan ini tidak bisa dibatalkan.</p>' +
-              '</div>';
-            showConfirmModal('Konfirmasi Pesanan Selesai', html, function() { setOrderStatus(orderId, 'completed'); });
-        }
-
-        function showConfirmModal(title, htmlBody, onYes) {
-            let m = document.getElementById('modal-confirm');
-            if (!m) {
-                m = document.createElement('div');
-                m.id = 'modal-confirm';
-                m.className = 'fixed inset-0 bg-slate-900/70 z-[70] hidden items-center justify-center p-4 backdrop-blur-sm';
-                m.innerHTML = '<div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 max-h-[85vh] overflow-y-auto fade">' +
-                  '<h3 id="cf-title" class="font-extrabold text-lg mb-3"></h3>' +
-                  '<div id="cf-body"></div>' +
-                  '<div class="flex gap-2 mt-5"><button id="cf-no" class="flex-1 bg-slate-100 text-slate-600 font-bold py-3 rounded-xl">Batal</button>' +
-                  '<button id="cf-yes" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3 rounded-xl">Ya, Selesaikan</button></div>' +
-                  '</div>';
-                document.body.appendChild(m);
-            }
-            document.getElementById('cf-title').innerText = title;
-            document.getElementById('cf-body').innerHTML = htmlBody;
-            document.getElementById('cf-no').onclick = function() { m.classList.add('hidden'); m.classList.remove('flex'); };
-            document.getElementById('cf-yes').onclick = function() { m.classList.add('hidden'); m.classList.remove('flex'); onYes(); };
-            m.classList.remove('hidden'); m.classList.add('flex');
-        }
-
-        function toggleOrderDetail(orderId) {
-            document.getElementById('detail-' + orderId).classList.toggle('hidden');
-        }
-
-        async function setOrderStatus(orderId, status) {
-            const pin = (document.getElementById('admin-pin').value || '').trim();
-            try {
-                const res = await fetch((localStorage.getItem('kpos_sb_url') || '') + '/rest/v1/rpc/shop_admin_set_status', {
-                    method: 'POST',
-                    headers: { 'apikey': localStorage.getItem('kpos_sb_key') || '', 'Authorization': 'Bearer ' + (localStorage.getItem('kpos_sb_key') || ''), 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ p_admin_pin: pin, p_order_id: orderId, p_status: status })
-                });
-                const data = await res.json();
-                showToast(data.message || '', data.ok ? 'success' : 'warning');
-                if (data.ok) loadShopOrders();
-            } catch (e) { showToast('Gagal: ' + e, 'warning'); }
         }
 
         function closeScanner() {
@@ -995,7 +790,7 @@
             const container = document.getElementById('product-list-container');
             container.innerHTML = prods.map((p, idx) => `
                 <div class="p-4 bg-slate-50 rounded-xl border space-y-2">
-                    <div class="flex justify-between items-center"><span class="font-bold text-slate-800">${p.name} <span class="text-slate-400 font-medium ml-2">(${p.id})</span>${p.barcode ? `<span class="ml-2 text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold"><i class="fa-solid fa-barcode mr-1"></i>${p.barcode}</span>` : ''}</span><span class="flex items-center gap-2"><span class="text-xs font-bold text-slate-600 bg-slate-200 px-2 py-0.5 rounded">Stok: ${p.stock} ${p.baseUnit}</span><button onclick="openEditProduct('${p.id}')" title="Edit produk" class="text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg px-2.5 py-1.5 transition"><i class="fa-solid fa-pencil"></i></button><button onclick="openPhotoUpload('${p.id}', '${p.name.replace(/'/g, "\\'")}')" title="Upload foto produk" class="text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg px-2.5 py-1.5 transition"><i class="fa-solid fa-camera"></i></button><button onclick="deleteProduct('${p.id}', '${p.name.replace(/'/g, "\\'")}')" title="Hapus produk" class="text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg px-2.5 py-1.5 transition"><i class="fa-solid fa-trash-can"></i></button></span></div>
+                    <div class="flex justify-between items-center"><span class="font-bold text-slate-800">${p.name} <span class="text-slate-400 font-medium ml-2">(${p.id})</span>${p.barcode ? `<span class="ml-2 text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold"><i class="fa-solid fa-barcode mr-1"></i>${p.barcode}</span>` : ''}</span><span class="flex items-center gap-2"><span class="text-xs font-bold text-slate-600 bg-slate-200 px-2 py-0.5 rounded">Stok: ${p.stock} ${p.baseUnit}</span><button onclick="deleteProduct('${p.id}', '${p.name.replace(/'/g, "\\'")}')" title="Hapus produk" class="text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg px-2.5 py-1.5 transition"><i class="fa-solid fa-trash-can"></i></button></span></div>
                     <div class="flex flex-wrap gap-4 pt-2 border-t text-xs">
                         ${(p.units || []).map((u, uIdx) => `
                             <div class="flex items-center space-x-2 bg-white p-2 rounded border">
@@ -1138,202 +933,6 @@
                 loadDashboardData(); loadProductsData(); loadFinancialReport();
             }
         });
-    
-// ===== Upload foto produk (Cloudinary via Edge Function product-image) =====
-let photoPid = null;
-function openPhotoUpload(pid, pname) {
-  photoPid = pid;
-  document.getElementById('photo-product-label').innerText = pname + ' (' + pid + ')';
-  document.getElementById('photo-pin').value = '';
-  document.getElementById('photo-file').value = '';
-  document.getElementById('photo-preview').classList.add('hidden');
-  const m = document.getElementById('modal-photo');
-  m.classList.remove('hidden'); m.classList.add('flex');
-}
-function closePhotoModal() {
-  const m = document.getElementById('modal-photo');
-  m.classList.add('hidden'); m.classList.remove('flex');
-}
-document.addEventListener('change', e => {
-  if (e.target && e.target.id === 'photo-file') {
-    const f = e.target.files[0];
-    if (!f) return;
-    const img = document.getElementById('photo-preview');
-    img.src = URL.createObjectURL(f);
-    img.classList.remove('hidden');
-  }
-});
-async function uploadProductPhoto() {
-  if (!photoPid) return;
-  const pin = (document.getElementById('photo-pin').value || '').trim();
-  const f = document.getElementById('photo-file').files[0];
-  if (!pin) { showToast('PIN admin wajib diisi', 'warning'); return; }
-  if (!f) { showToast('Pilih foto dulu', 'warning'); return; }
-  if (f.size > 6 * 1024 * 1024) { showToast('Foto maks 6 MB', 'warning'); return; }
-  const btn = document.getElementById('btn-photo-upload');
-  btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>Mengunggah...';
-  try {
-    const b64 = await new Promise((res, rej) => {
-      const r = new FileReader();
-      r.onload = () => res(String(r.result).split(',')[1]);
-      r.onerror = rej;
-      r.readAsDataURL(f);
-    });
-    const url = (localStorage.getItem('kpos_sb_url') || 'https://zosdcuiulgpjevgbyquw.supabase.co').replace(/\/$/, '');
-    const resp = await fetch(url + '/functions/v1/product-image', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pin, productId: photoPid, fileB64: b64, fileName: f.name })
-    });
-    const d = await resp.json();
-    if (!d.ok) throw new Error(d.message || 'Gagal upload');
-    showToast('Foto tersimpan! Katalog /shop diperbarui.', 'success');
-    closePhotoModal();
-    loadProductsData();
-  } catch (err) {
-    showToast(err.message || 'Gagal upload', 'warning');
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up mr-1"></i>Upload ke Cloudinary';
-  }
-}
-
-// ===== Edit produk (fix_18: admin_edit_product) =====
-let epOrig = null; // {id, name, barcode, units: [{unit, price, hpp}]}
-function openEditProduct(pid) {
-  const p = (globalProducts || []).find(x => x.id === pid);
-  if (!p) { showToast('Data produk tidak ditemukan — muat ulang koneksi.', 'warning'); return; }
-  epOrig = { id: p.id, name: p.name, baseUnit: p.baseUnit || '', barcode: p.barcode || '', units: (p.units || []).map(u => ({ unit: u, unitOrig: u, price: (p.prices && p.prices[u]) || 0, priceOrig: (p.prices && p.prices[u]) || 0 })) };
-  document.getElementById('ep-id').value = p.id;
-  document.getElementById('ep-name').value = p.name;
-  document.getElementById('ep-barcode').value = epOrig.barcode;
-  document.getElementById('ep-pin').value = '';
-  renderEpUnits();
-  const m = document.getElementById('modal-edit-product');
-  m.classList.remove('hidden'); m.classList.add('flex');
-}
-function closeEditProduct() {
-  const m = document.getElementById('modal-edit-product');
-  m.classList.add('hidden'); m.classList.remove('flex');
-}
-function renderEpUnits() {
-  const box = document.getElementById('ep-units');
-  box.innerHTML = (epOrig.units || []).map((u, i) => `
-    <div class="flex items-center gap-2 bg-slate-50 border rounded-xl p-2" data-idx="${i}">
-      <input value="${u.unit}" ${u.isNew ? 'readonly' : ''} onchange="epRename(${i}, this.value)" class="flex-1 border rounded-lg px-2 py-1.5 text-sm" placeholder="Nama satuan (mis. Pcs)">
-      ${u.isNew && u.conversion ? `<span class="text-[10px] font-bold text-emerald-700 whitespace-nowrap" title="Nilai konversi">1 ${u.unit} = ${u.conversion} ${epOrig.baseUnit || ''}</span>` : ''}
-      <span class="text-[10px] text-slate-400 font-bold">Harga:</span>
-      <input type="number" value="${u.price}" onchange="epPrice(${i}, this.value)" class="border rounded-lg px-2 py-1.5 text-sm w-24">
-      <button onclick="epRemoveRow(${i})" title="Hapus satuan" class="text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg px-2 py-1.5"><i class="fa-solid fa-trash-can"></i></button>
-    </div>`).join('') + (epOrig.units || []).filter(u => u.isNew).map((u, j) => '').join('');
-}
-function epRename(i, val) { if (epOrig.units[i]) epOrig.units[i].unit = val.trim(); }
-function epPrice(i, val) { if (epOrig.units[i]) epOrig.units[i].price = parseFloat(val) || 0; }
-function epAddUnitRow() {
-  const base = (globalProducts.find(x => x.id === epOrig.id) || {}).baseUnit || '';
-  const unitStr = prompt('Nama satuan baru (contoh: Lusin, Karton, Pak):', '');
-  if (!unitStr || !unitStr.trim()) return;
-  const unit = unitStr.trim();
-  if (epOrig.units.map(u => (u.unit || '').toLowerCase()).includes(unit.toLowerCase())) {
-    showToast('Satuan "' + unit + '" sudah ada.', 'warning'); return;
-  }
-  let conv = 1;
-  if (base) {
-    const convStr = prompt('PENTING: Nilai Konversi\\n1 ' + unit + ' sama dengan berapa ' + base + '?', '1');
-    if (convStr === null) return;
-    conv = parseFloat(convStr);
-    if (isNaN(conv) || conv <= 0) { showToast('Konversi tidak valid — dibatalkan.', 'warning'); return; }
-  }
-  epOrig.units.push({ unit, unitOrig: unit, price: 0, priceOrig: 0, isNew: true, conversion: conv });
-  renderEpUnits();
-  showToast('Satuan "' + unit + '" ditambahkan (1 ' + unit + ' = ' + conv + ' ' + (base || '?') + '). Isi harga lalu Simpan.', 'info');
-}
-function epRemoveRow(i) {
-  const u = epOrig.units[i];
-  if (u && u.isNew) { epOrig.units.splice(i, 1); renderEpUnits(); return; }
-  if (u) { u.remove = true; renderEpUnits(); document.querySelectorAll('#ep-units > div')[i].classList.add('opacity-40','line-through'); }
-}
-async function saveEditProduct() {
-  const pin = (document.getElementById('ep-pin').value || '').trim();
-  if (!pin) { showToast('PIN admin wajib diisi', 'warning'); return; }
-  const newId = (document.getElementById('ep-id').value || '').trim();
-  const newName = (document.getElementById('ep-name').value || '').trim();
-  if (!newId || !newName) { showToast('ID & nama produk wajib diisi', 'warning'); return; }
-  const unitsPayload = [];
-  const seen = {};
-  for (const u of epOrig.units) {
-    const unit = (u.unit || '').trim();
-    if (!unit) { showToast('Ada satuan tanpa nama — isi atau hapus dulu.', 'warning'); return; }
-    if (seen[unit]) { showToast('Satuan "' + unit + '" dobel.', 'warning'); return; }
-    seen[unit] = true;
-    if (u.remove) unitsPayload.push({ action: 'remove', unit: u.unitOrig });
-    else if (u.isNew) unitsPayload.push({ action: 'add', unit, price: u.price, conversion: u.conversion || 1 });
-    else if (unit !== u.unitOrig) unitsPayload.push({ action: 'rename', from: u.unitOrig, to: unit });
-    else if (u.price !== u.priceOrig) unitsPayload.push({ action: 'setprice', unit, price: u.price });
-  }
-  const btn = document.getElementById('btn-ep-save');
-  btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>Menyimpan...';
-  try {
-    const url = (localStorage.getItem('kpos_sb_url') || 'https://zosdcuiulgpjevgbyquw.supabase.co').replace(/\/$/, '');
-    const key = localStorage.getItem('kpos_sb_key');
-    const resp = await fetch(url + '/rest/v1/rpc/admin_edit_product', {
-      method: 'POST',
-      headers: { 'apikey': key, 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ p_pin: pin, p_product_id: epOrig.id, p_new_id: newId !== epOrig.id ? newId : null, p_name: newName !== epOrig.name ? newName : null, p_barcode: (document.getElementById('ep-barcode').value || '') !== epOrig.barcode ? (document.getElementById('ep-barcode').value || '') : null, p_units: unitsPayload })
-    });
-    const d = await resp.json();
-    if (d && d.ok === false) throw new Error(d.message || 'Gagal menyimpan');
-    showToast('Perubahan tersimpan!', 'success');
-    closeEditProduct();
-    if (window.__kposConnected && typeof testConnection === 'function') {
-      testConnection(localStorage.getItem('kpos_sb_url'), localStorage.getItem('kpos_sb_key')).then(prods => {
-        globalProducts = prods || []; renderProductTable(globalProducts);
-      });
-    }
-  } catch (err) {
-    showToast(err.message || 'Gagal menyimpan', 'warning');
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '<i class="fa-solid fa-floppy-disk mr-1"></i>Simpan Perubahan';
-  }
-}
-</script>
-<!-- MODAL EDIT PRODUK -->
-<div id="modal-edit-product" class="fixed inset-0 bg-slate-900/70 z-50 hidden items-center justify-center p-4 backdrop-blur-sm">
-  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 max-h-[88vh] overflow-y-auto fade">
-    <div class="flex justify-between items-center mb-3">
-      <h3 class="font-extrabold text-lg">Edit Produk</h3>
-      <button onclick="closeEditProduct()" class="text-slate-400 hover:text-rose-500 text-xl"><i class="fa-solid fa-xmark"></i></button>
-    </div>
-    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Product ID</label>
-    <input id="ep-id" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm mb-3" placeholder="PRD-001">
-    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nama Produk</label>
-    <input id="ep-name" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm mb-3">
-    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Barcode</label>
-    <input id="ep-barcode" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm mb-4" placeholder="Kosongkan jika tidak ada">
-    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Satuan</label>
-    <div id="ep-units" class="space-y-2 mb-2"></div>
-    <button onclick="epAddUnitRow()" class="text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg px-3 py-2 mb-4"><i class="fa-solid fa-plus mr-1"></i>Tambah Satuan</button>
-    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">PIN Admin</label>
-    <input id="ep-pin" type="password" inputmode="numeric" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm mb-4" placeholder="PIN Admin">
-    <button id="btn-ep-save" onclick="saveEditProduct()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-extrabold py-3 rounded-xl"><i class="fa-solid fa-floppy-disk mr-1"></i>Simpan Perubahan</button>
-  </div>
-</div>
-<!-- MODAL UPLOAD FOTO PRODUK -->
-<div id="modal-photo" class="fixed inset-0 bg-slate-900/70 z-50 hidden items-center justify-center p-4 backdrop-blur-sm">
-  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 fade">
-    <div class="flex justify-between items-center mb-3">
-      <h3 class="font-extrabold text-lg">Foto Produk</h3>
-      <button onclick="closePhotoModal()" class="text-slate-400 hover:text-rose-500 text-xl"><i class="fa-solid fa-xmark"></i></button>
-    </div>
-    <p id="photo-product-label" class="text-sm font-bold text-slate-700 mb-3"></p>
-    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">PIN Admin</label>
-    <input id="photo-pin" type="password" inputmode="numeric" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm mb-3" placeholder="PIN Admin">
-    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Foto (JPG/PNG, maks 6 MB)</label>
-    <input id="photo-file" type="file" accept="image/jpeg,image/png,image/webp" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm mb-3">
-    <img id="photo-preview" class="hidden w-full aspect-square object-cover rounded-xl mb-3 bg-slate-100">
-    <button id="btn-photo-upload" onclick="uploadProductPhoto()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3 rounded-xl disabled:opacity-50"><i class="fa-solid fa-cloud-arrow-up mr-1"></i>Upload ke Cloudinary</button>
-    <p class="text-xs text-slate-400 mt-2">Foto otomatis dikompres &amp; muncul di katalog /shop.</p>
-  </div>
-</div>
+    </script>
 </body>
 </html>
