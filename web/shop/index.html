@@ -231,7 +231,10 @@ function renderCatalog() {
     return okQ && okC;
   });
   if (!list.length) { box.innerHTML = '<p class="text-slate-400 text-sm col-span-full text-center py-8">Tidak ada produk.</p>'; return; }
-  box.innerHTML = list.map(function(p) {
+  // Pisahkan: stok tersedia di atas, habis di bawah (bagian terpisah)
+  var avail = list.filter(function(p){ return Number(p.stock || 0) > 0; });
+  var sold  = list.filter(function(p){ return Number(p.stock || 0) <= 0; });
+  function card(p) {
     var firstUnit = (p.units && p.units[0]) || p.baseUnit;
     var unitOpts = (p.units || []).map(function(u) {
       return '<option value="' + u + '"' + (u === firstUnit ? ' selected' : '') + '>' + u + ' — ' + fmtRp(p.prices ? p.prices[u] : 0) + '</option>';
@@ -248,7 +251,15 @@ function renderCatalog() {
         '<p class="text-sm font-extrabold text-emerald-700 mb-1">' + fmtRp(p.prices ? p.prices[firstUnit] : 0) + ' <span class="text-xs font-normal text-slate-400">/' + firstUnit + '</span>' +
         (p.units && p.units.length > 1 ? ' <span class="text-xs text-slate-400">• ' + p.units.length + ' pilihan satuan</span>' : '') + '</p>') +
       '</div>';
-  }).join('');
+  }
+  var html = avail.map(card).join('');
+  if (sold.length) {
+    html += '<div class="col-span-full mt-6 mb-1 flex items-center gap-2">' +
+      '<h3 class="text-xs font-bold uppercase tracking-wider text-slate-400"><i class="fa-solid fa-box-open text-slate-300 mr-1"></i>Stok Habis — segera restock</h3>' +
+      '<span class="flex-1 border-t border-slate-100"></span></div>' +
+      sold.map(card).join('');
+  }
+  box.innerHTML = html;
 }
 // ---- Detail produk (popup) + qty picker ----
 var detailPid = null, detailQty = 1;
