@@ -777,7 +777,13 @@
         function statusFlow(o) {
             // pickup: tidak ada tahap kirim; delivery: pakai shipping
             if (o.fulfillment === 'delivery') {
-                return { pending:['paid','cancelled'], paid:['processing','cancelled'], processing:['shipping','cancelled'], shipping:['completed'], completed:[], cancelled:[] }[o.status] || [];
+                // COD: selagi belum selesai & belum dibayar, admin boleh membatalkan
+                // (mis. kurir tidak ketemu customer). Paid online: setelah dikirim tidak
+                // bisa batal langsung (dana sudah masuk — lewat refund manual).
+                const canCancelShipping = o.payment_method === 'cod' || o.payment_method === undefined || o.payment_method === null;
+                return { pending:['paid','cancelled'], paid:['processing','cancelled'], processing:['shipping','cancelled'],
+                         shipping: canCancelShipping ? ['completed','cancelled'] : ['completed'],
+                         completed:[], cancelled:[] }[o.status] || [];
             }
             return { pending:['paid','cancelled'], paid:['processing','cancelled'], processing:['ready','cancelled'], ready:['completed'], completed:[], cancelled:[] }[o.status] || [];
         }
