@@ -191,6 +191,17 @@ function rpc(fn, args) {
   }).then(function(r) { return r.json(); });
 }
 function fmtRp(v) { return 'Rp' + Number(v || 0).toLocaleString('id-ID'); }
+function cheapestUnit(p) {
+  // Satuan termurah = satuan ecer (default tampilan katalog). Fallback: satuan pertama.
+  var units = (p.units || []).slice();
+  if (!units.length) return p.baseUnit;
+  var best = units[0], bestV = Infinity;
+  units.forEach(function(u) {
+    var v = p.prices ? Number(p.prices[u] || Infinity) : Infinity;
+    if (v < bestV) { bestV = v; best = u; }
+  });
+  return best;
+}
 function showToast(msg, type) {
   var t = document.getElementById('toast');
   t.innerText = msg;
@@ -235,10 +246,7 @@ function renderCatalog() {
   var avail = list.filter(function(p){ return Number(p.stock || 0) > 0; });
   var sold  = list.filter(function(p){ return Number(p.stock || 0) <= 0; });
   function card(p) {
-    var firstUnit = (p.units && p.units[0]) || p.baseUnit;
-    var unitOpts = (p.units || []).map(function(u) {
-      return '<option value="' + u + '"' + (u === firstUnit ? ' selected' : '') + '>' + u + ' — ' + fmtRp(p.prices ? p.prices[u] : 0) + '</option>';
-    }).join('');
+    var firstUnit = cheapestUnit(p);
     var out = Number(p.stock || 0) <= 0;
     var imgHtml = p.imageUrl
       ? '<img src="' + p.imageUrl + '" alt="' + p.name + '" loading="lazy" class="w-full h-32 object-cover rounded-xl mb-2 bg-slate-100" onerror="this.style.display=\'none\'">'
@@ -267,7 +275,7 @@ function openProduct(pid) {
   var p = catalog.find(function(x){ return x.id === pid; });
   if (!p) return;
   detailPid = pid; detailQty = 1;
-  var firstUnit = (p.units && p.units[0]) || p.baseUnit;
+  var firstUnit = cheapestUnit(p);
   var out = Number(p.stock || 0) <= 0;
   var imgHtml = p.imageUrl
     ? '<img src="' + p.imageUrl + '" alt="' + p.name + '" class="w-full aspect-square object-cover rounded-xl mb-3 bg-slate-100" onerror="this.style.display=\'none\'">'
