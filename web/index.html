@@ -354,9 +354,24 @@
             try { s = JSON.parse(localStorage.getItem('kpos_landing_auth') || 'null'); } catch (e) {}
             if (s && s.exp > Date.now()) return; // sesi web masih valid
             // GATE PIN: overlay di halaman ini (login kasir di landing sudah dihapus)
+            // sembunyikan seluruh isi dashboard (tidak boleh terlihat sebelum login)
+            document.documentElement.style.background = '#0B1120';
+            Array.prototype.slice.call(document.body.children).forEach(function(el) { el.style.display = 'none'; });
+            // tampilkan landing page sebagai background (tanpa tombol aksi) — seperti saat klik "Masuk Kasir" dulu
+            fetch('/').then(function(r) { return r.text(); }).then(function(html) {
+                var doc = new DOMParser().parseFromString(html, 'text/html');
+                var bg = document.createElement('div');
+                bg.id = 'gate-bg';
+                bg.style.cssText = 'position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;user-select:none;';
+                // buang semua elemen interaktif & modal dari salinan landing
+                doc.querySelectorAll('nav a, nav button, a, button, #modal-clogin, script').forEach(function(el) { el.remove(); });
+                doc.querySelectorAll('details').forEach(function(el) { el.removeAttribute('open'); });
+                bg.appendChild(doc.body);
+                document.body.appendChild(bg);
+            }).catch(function() {});
             var ov = document.createElement('div');
             ov.id = 'gate-pos';
-            ov.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,0.92);display:flex;align-items:center;justify-content:center;padding:20px;';
+            ov.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,0.55);display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);';
             ov.innerHTML = '<div style="background:#fff;border-radius:24px;max-width:340px;width:100%;padding:28px;text-align:center;font-family:system-ui,sans-serif">' +
                 '<div style="font-size:40px;margin-bottom:8px">🔐</div>' +
                 '<h3 style="font-size:18px;font-weight:800;color:#1e293b;margin:0 0 4px">Masuk POS</h3>' +
