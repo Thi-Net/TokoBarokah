@@ -352,7 +352,57 @@
             if (isAPK) return;
             var s = null;
             try { s = JSON.parse(localStorage.getItem('kpos_landing_auth') || 'null'); } catch (e) {}
-            if (!(s && s.exp > Date.now())) window.location.replace('/?redirect=pos');
+            if (s && s.exp > Date.now()) return; // sesi web masih valid
+            // GATE PIN: overlay di halaman ini (login kasir di landing sudah dihapus)
+            var ov = document.createElement('div');
+            ov.id = 'gate-pos';
+            ov.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,0.92);display:flex;align-items:center;justify-content:center;padding:20px;';
+            ov.innerHTML = '<div style="background:#fff;border-radius:24px;max-width:340px;width:100%;padding:28px;text-align:center;font-family:system-ui,sans-serif">' +
+                '<div style="font-size:40px;margin-bottom:8px">🔐</div>' +
+                '<h3 style="font-size:18px;font-weight:800;color:#1e293b;margin:0 0 4px">Dashboard Admin</h3>' +
+                '<p style="font-size:12px;color:#64748b;margin:0 0 16px">Masukkan PIN Admin untuk membuka POS</p>' +
+                '<input id="gate-pin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="PIN Admin" style="width:100%;box-sizing:border-box;border:2px solid #e2e8f0;border-radius:14px;padding:14px;font-size:18px;text-align:center;letter-spacing:4px;margin-bottom:10px;outline:none" />' +
+                '<input id="gate-sburl" type="url" placeholder="Supabase URL (sekali saja)" style="display:none;width:100%;box-sizing:border-box;border:2px solid #e2e8f0;border-radius:14px;padding:12px;font-size:13px;margin-bottom:10px;outline:none" />' +
+                '<input id="gate-sbkey" type="text" placeholder="Supabase key (sekali saja)" style="display:none;width:100%;box-sizing:border-box;border:2px solid #e2e8f0;border-radius:14px;padding:12px;font-size:13px;margin-bottom:10px;outline:none" />' +
+                '<p id="gate-err" style="display:none;font-size:12px;color:#e11d48;font-weight:700;margin:0 0 10px"></p>' +
+                '<button id="gate-btn" style="width:100%;background:#059669;color:#fff;border:none;border-radius:14px;padding:14px;font-size:15px;font-weight:800;cursor:pointer">Buka Dashboard</button>' +
+                '<a href="/" style="display:inline-block;margin-top:12px;font-size:12px;color:#64748b;text-decoration:none">← Kembali ke beranda</a>' +
+                '</div>';
+            document.body.appendChild(ov);
+            var pinEl = document.getElementById('gate-pin');
+            var errEl = document.getElementById('gate-err');
+            var btn = document.getElementById('gate-btn');
+            setTimeout(function(){ pinEl.focus(); }, 100);
+            function showErr(m) { errEl.innerText = m; errEl.style.display = 'block'; btn.disabled = false; btn.innerText = 'Buka Dashboard'; }
+            function submit() {
+                var pin = (pinEl.value || '').trim();
+                if (!pin) { showErr('PIN wajib diisi'); return; }
+                btn.disabled = true; btn.innerText = 'Memverifikasi...';
+                var u = (localStorage.getItem('kpos_sb_url') || '').trim();
+                var k = (localStorage.getItem('kpos_sb_key') || '').trim();
+                var urlEl = document.getElementById('gate-sburl'), keyEl = document.getElementById('gate-sbkey');
+                if (!u || !k) {
+                    u = (urlEl.value || '').trim(); k = (keyEl.value || '').trim();
+                    if (!u || !k) { urlEl.style.display = 'block'; keyEl.style.display = 'block'; showErr('Isi Supabase URL & key sekali saja (tersimpan di perangkat ini)'); return; }
+                }
+                u = u.replace(/\/$/, '');
+                fetch(u + '/rest/v1/rpc/shop_admin_orders', {
+                    method: 'POST',
+                    headers: { 'apikey': k, 'Authorization': 'Bearer ' + k, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ p_admin_pin: pin })
+                }).then(function(r) { return r.json(); }).then(function(d) {
+                    if (!d || !d.ok) { showErr((d && d.message) ? d.message : 'PIN salah / koneksi gagal'); return; }
+                    try {
+                        localStorage.setItem('kpos_sb_url', u);
+                        localStorage.setItem('kpos_sb_key', k);
+                        localStorage.setItem('kpos_admin_pin', pin);
+                        localStorage.setItem('kpos_landing_auth', JSON.stringify({ exp: Date.now() + 12 * 3600 * 1000 }));
+                    } catch (e) {}
+                    ov.remove();
+                }).catch(function(e) { showErr('Gagal terhubung: ' + e); });
+            }
+            btn.addEventListener('click', submit);
+            pinEl.addEventListener('keydown', function(e) { if (e.key === 'Enter') submit(); });
         })();
 
         const todayStr = new Date().toISOString().slice(0,10);

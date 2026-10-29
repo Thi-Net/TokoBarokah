@@ -1,5 +1,5 @@
 {
-  "appVersion": "2.7.7",
-  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.7.7/KelontongPOS-v2.7.7.apk",
-  "notes": "Perbaikan force close saat muat pesanan online (permission service notifikasi) + popup update tengah layar"
+  "appVersion": "2.7.8",
+  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.7.8/KelontongPOS-v2.7.8.apk",
+  "notes": "Login web /pos dengan PIN Admin langsung di halaman (tanpa lewat landing) + fix force close notifikasi"
 }
