@@ -1,5 +1,5 @@
 {
-  "appVersion": "1.2",
-  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/customer-v1.2/TokoBarokah-Customer-v1.2.apk",
-  "notes": "Logo toko baru"
+  "appVersion": "1.3",
+  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/customer-v1.3/TokoBarokah-Customer-v1.3.apk",
+  "notes": "Perbaikan izin lokasi GPS saat checkout pengiriman"
 }

@@ -134,6 +134,25 @@ public class OrderPollService extends Service {
     @Override
     public void onDestroy() {
         if (handler != null && runnable != null) handler.removeCallbacks(runnable);
+        scheduleRestart();
         super.onDestroy();
+    }
+
+    // Android mematikan service saat app di-swipe recents/force close.
+    // Alarm tiap 15 menit (allow-while-idle) membangunkan service lagi,
+    // selama kredensial masih tersimpan (user masih pakai fitur ini).
+    private void scheduleRestart() {
+        try {
+            android.app.AlarmManager am = (android.app.AlarmManager) getSystemService(ALARM_SERVICE);
+            android.app.PendingIntent pi = android.app.PendingIntent.getBroadcast(this, 1001,
+                new Intent(this, AlarmReceiver.class),
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE);
+            long trigger = android.os.SystemClock.elapsedRealtime() + 15 * 60 * 1000L;
+            if (Build.VERSION.SDK_INT >= 23) {
+                am.setExactAndAllowWhileIdle(android.app.AlarmManager.ELAPSED_REALTIME_WAKEUP, trigger, pi);
+            } else {
+                am.setExact(android.app.AlarmManager.ELAPSED_REALTIME_WAKEUP, trigger, pi);
+            }
+        } catch (Exception e) { }
     }
 }

@@ -1,5 +1,5 @@
 {
-  "appVersion": "2.7.12",
-  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.7.12/KelontongPOS-v2.7.12.apk",
-  "notes": "Logo toko baru di seluruh aplikasi"
+  "appVersion": "2.7.13",
+  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.7.13/KelontongPOS-v2.7.13.apk",
+  "notes": "Notifikasi auto-restart walau app di-swipe/HP di-restart"
 }
