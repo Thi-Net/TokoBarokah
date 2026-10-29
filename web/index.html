@@ -791,7 +791,7 @@
         let lastOrdersData = null;
 
         async function loadShopOrders() {
-            const pin = (document.getElementById('admin-pin').value || '').trim();
+            const pin = (document.getElementById('admin-pin').value || '').trim() || localStorage.getItem('kpos_admin_pin') || '';
             if (!pin) { showToast('Masukkan PIN Admin dulu', 'warning'); return; }
             const box = document.getElementById('shop-orders-list');
             box.innerHTML = '<p class="text-sm text-slate-400">Memuat...</p>';
@@ -803,12 +803,62 @@
                 });
                 const data = await res.json();
                 if (!data.ok) { showToast(data.message || 'Gagal', 'warning'); box.innerHTML = '<p class="text-sm text-rose-500">' + (data.message || 'Gagal memuat') + '</p>'; return; }
+                try { localStorage.setItem('kpos_admin_pin', pin); } catch (e) {}
                 lastOrdersData = data; renderShopOrders(data);
+                checkNewOrders(data);
             } catch (e) {
                 showToast('Gagal: ' + e, 'warning');
                 box.innerHTML = '<p class="text-sm text-rose-500">Gagal memuat: ' + e + '</p>';
             }
         }
+
+// ==== NOTIF PESANAN BARU (polling 30 detik) ====
+        let knownOrderIds = null;
+        function checkNewOrders(data) {
+            try {
+                const ids = (data.orders || []).map(o => o.id);
+                if (knownOrderIds === null) { knownOrderIds = new Set(ids); return; }
+                const fresh = ids.filter(id => !knownOrderIds.has(id));
+                fresh.forEach(id => knownOrderIds.add(id));
+                if (fresh.length && knownOrderIds.size > fresh.length) {
+                    const freshOrders = (data.orders || []).filter(o => fresh.includes(o.id));
+                    const first = freshOrders[0] || {};
+                    const cust = (data.customers || []).find(c => c.id === first.customer_id) || {};
+                    const n = fresh.length;
+                    const title = '🛒 ' + n + ' Pesanan Online Baru!';
+                    const body = (cust.name || 'Pelanggan') + (n > 1 ? ' + ' + (n-1) + ' lainnya' : '') + ' — Rp' + Number(first.total||0).toLocaleString('id-ID');
+                    if (window.AndroidBridge && window.AndroidBridge.notifyOrder) {
+                        AndroidBridge.notifyOrder(title, body);
+                    } else {
+                        showToast(title + ' ' + body, 'ok');
+                        try { document.getElementById('notif-sound').play(); } catch (e) {}
+                    }
+                }
+            } catch (e) {}
+        }
+        let ordersPollTimer = null;
+        function startOrdersPolling() {
+            if (ordersPollTimer) return;
+            ordersPollTimer = setInterval(async function() {
+                const pin = (document.getElementById('admin-pin').value || '').trim()
+                    || localStorage.getItem('kpos_admin_pin') || '';
+                if (!pin) return;
+                try {
+                    const res = await fetch((localStorage.getItem('kpos_sb_url') || '') + '/rest/v1/rpc/shop_admin_orders', {
+                        method: 'POST',
+                        headers: { 'apikey': localStorage.getItem('kpos_sb_key') || '', 'Authorization': 'Bearer ' + (localStorage.getItem('kpos_sb_key') || ''), 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ p_admin_pin: pin })
+                    });
+                    const data = await res.json();
+                    if (data.ok) {
+                        lastOrdersData = data;
+                        renderShopOrders(data);
+                        checkNewOrders(data);
+                    }
+                } catch (e) {}
+            }, 30000);
+        }
+        startOrdersPolling();
 
         function renderShopOrders(data) {
             const box = document.getElementById('shop-orders-list');

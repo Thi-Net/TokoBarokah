@@ -1,5 +1,5 @@
 {
-  "appVersion": "2.7.3",
-  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.7.3/KelontongPOS-v2.7.3.apk",
-  "notes": "Tes popup update v2.7.3"
+  "appVersion": "2.7.4",
+  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.7.4/KelontongPOS-v2.7.4.apk",
+  "notes": "Notifikasi pesanan online baru (polling 30 detik, popup + suara)"
 }
