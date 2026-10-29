@@ -38,7 +38,7 @@
 
 <!-- CATALOG -->
 <main class="max-w-3xl mx-auto px-4 py-4 pb-32">
-  <input id="search" oninput="renderCatalog()" type="search" placeholder="Cari produk..." class="w-full bg-white border border-slate-200 focus:border-emerald-500 rounded-xl px-4 py-3 text-sm mb-3">
+  <input id="search" oninput="renderCatalog()" type="search" autocomplete="off" name="product-search-kpos" placeholder="Cari produk..." class="w-full bg-white border border-slate-200 focus:border-emerald-500 rounded-xl px-4 py-3 text-sm mb-3">
   <!-- CHIP KATEGORI -->
   <div id="cat-chips" class="flex gap-2 overflow-x-auto pb-2 mb-4" style="scrollbar-width:none"></div>
   <div id="catalog" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
@@ -819,6 +819,14 @@ updateAccountUI();
 setFulfillment('pickup');
 fillDeliveryDates();
 loadCatalog();
+</script>
+<script>
+(function(){ // guard: autofill email ke kolom pencarian setelah login
+  var _s = document.getElementById('search');
+  if (_s && _s.value) { _s.value = ''; }
+  if (typeof renderCatalog === 'function') renderCatalog();
+  window.addEventListener('pageshow', function(ev) { if (ev.persisted && typeof renderCatalog === 'function') renderCatalog(); });
+})();
 </script>
 </body>
 </html>

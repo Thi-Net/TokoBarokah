@@ -369,12 +369,12 @@ button:active { transform: scale(0.97); }
     </div>
     <div id="cl-reg-extra" class="hidden">
       <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nama lengkap</label>
-      <input id="cl-name" type="text" placeholder="Nama kamu" class="w-full border border-slate-300 focus:border-emerald-500 rounded-xl px-4 py-3 mb-3">
+      <input id="cl-name" type="text" autocomplete="name" placeholder="Nama kamu" class="w-full border border-slate-300 focus:border-emerald-500 rounded-xl px-4 py-3 mb-3">
     </div>
     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Email</label>
-    <input id="cl-email" type="email" placeholder="nama@email.com" class="w-full border border-slate-300 focus:border-emerald-500 rounded-xl px-4 py-3 mb-3">
+    <input id="cl-email" type="email" autocomplete="username" placeholder="nama@email.com" class="w-full border border-slate-300 focus:border-emerald-500 rounded-xl px-4 py-3 mb-3">
     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Password</label>
-    <input id="cl-pass" type="password" placeholder="Password kamu" class="w-full border border-slate-300 focus:border-emerald-500 rounded-xl px-4 py-3 mb-2">
+    <input id="cl-pass" type="password" autocomplete="current-password" placeholder="Password kamu" class="w-full border border-slate-300 focus:border-emerald-500 rounded-xl px-4 py-3 mb-2">
     <p id="cl-err" class="hidden text-sm text-rose-600 font-bold mb-2"></p>
     <button onclick="customerLogin()" id="cl-btn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3 rounded-xl mb-3">Masuk</button>
     <p id="cl-switch-text" class="text-sm text-slate-500 text-center">Belum punya akun? <button onclick="clShowRegister()" class="text-emerald-700 font-bold underline">Daftar di toko online</button></p>
