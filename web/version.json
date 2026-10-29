@@ -1,5 +1,5 @@
 {
-  "appVersion": "2.7.6",
-  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.7.6/KelontongPOS-v2.7.6.apk",
-  "notes": "Popup update tengah layar (bisa diklik, tidak tertutup navbar) + notifikasi pesanan walau app tidak dibuka"
+  "appVersion": "2.7.7",
+  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.7.7/KelontongPOS-v2.7.7.apk",
+  "notes": "Perbaikan force close saat muat pesanan online (permission service notifikasi) + popup update tengah layar"
 }
