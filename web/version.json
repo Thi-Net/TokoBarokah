@@ -1,5 +1,5 @@
 {
-  "appVersion": "2.7.8",
-  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.7.8/KelontongPOS-v2.7.8.apk",
-  "notes": "Login web /pos dengan PIN Admin langsung di halaman (tanpa lewat landing) + fix force close notifikasi"
+  "appVersion": "2.7.9",
+  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.7.9/KelontongPOS-v2.7.9.apk",
+  "notes": "Login /pos kembali user+password (taufik/kasir) + verifikasi PIN"
 }
