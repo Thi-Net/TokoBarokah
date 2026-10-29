@@ -367,10 +367,11 @@
         // ==== CEK UPDATE APP (v2.2+): version.json di Vercel ====
         async function checkAppUpdate() {
             try {
-                const cur = '2.2';
+                const cur = '2.6.1';
                 const res = await fetch('https://tokobarokah.vercel.app/version.json?t=' + Date.now());
                 const info = await res.json();
-                if (info.apkVersion && isNewer(info.apkVersion, cur)) showUpdateBanner(info.apkVersion, info.apkUrl);
+                var ver = info.apkVersion || info.appVersion;
+                if (ver && isNewer(ver, cur)) showUpdateBanner(ver, info.apkUrl);
             } catch (e) { /* offline / web: abaikan */ }
         }
         function isNewer(a, b) {

@@ -63,21 +63,13 @@ button:active { transform: scale(0.97); }
     <span class="w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-xl flex items-center justify-center text-slate-900 shadow-lg shadow-emerald-500/30"><i class="fa-solid fa-store"></i></span>
     Toko Barokah <span class="text-emerald-400">Online</span>
   </div>
-  <div id="nav-auth" class="hidden flex items-center gap-2">
-    <a href="/shop" class="bg-slate-800 hover:bg-slate-700 text-slate-100 font-bold text-sm px-4 min-h-[44px] rounded-xl border border-slate-700 inline-flex items-center">
-      <i class="fa-solid fa-cart-shopping mr-1.5"></i>Belanja
-    </a>
-    <button onclick="goPOS()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-bold text-sm px-5 min-h-[44px] rounded-xl shadow-lg shadow-emerald-500/30">
-      <i class="fa-solid fa-cash-register mr-1.5"></i>Buka Kasir
-    </button>
-  </div>
   <div id="nav-guest" class="flex items-center gap-2">
     <a href="/shop" class="bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-bold text-sm px-5 min-h-[44px] rounded-xl shadow-lg shadow-emerald-500/30 inline-flex items-center">
       <i class="fa-solid fa-cart-shopping mr-1.5"></i>Belanja Online
     </a>
-    <button id="nav-login" onclick="openLogin()" class="bg-slate-800 hover:bg-slate-700 text-slate-100 font-bold text-sm px-4 min-h-[44px] rounded-xl border border-slate-700">
+    <a href="/shop" class="bg-slate-800 hover:bg-slate-700 text-slate-100 font-bold text-sm px-4 min-h-[44px] rounded-xl border border-slate-700 inline-flex items-center">
       <i class="fa-solid fa-right-to-bracket mr-1.5"></i>Masuk
-    </button>
+    </a>
   </div>
 </nav>
 
@@ -105,11 +97,8 @@ button:active { transform: scale(0.97); }
       <a href="/shop" class="bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-extrabold text-lg px-10 min-h-[56px] rounded-2xl shadow-xl shadow-emerald-500/30 inline-flex items-center justify-center">
         <i class="fa-solid fa-cart-shopping mr-2"></i>Belanja Online
       </a>
-      <button onclick="openLogin()" class="bg-slate-800/80 hover:bg-slate-700 text-slate-100 font-bold text-lg px-8 min-h-[56px] rounded-2xl border border-slate-700 inline-flex items-center justify-center">
-        <i class="fa-solid fa-cash-register mr-2"></i>Masuk Kasir
-      </button>
     </div>
-    <p class="rise rise-4 text-slate-500 text-sm mt-4">Pelanggan? Belanja langsung tanpa download app — cukup nomor HP.</p>
+    <p class="rise rise-4 text-slate-500 text-sm mt-4">Belanja langsung tanpa download app — cukup buka web.</p>
 
     <!-- Statistik -->
     <div class="stat-in mt-14 grid grid-cols-3 gap-3 max-w-xl mx-auto">
@@ -270,12 +259,12 @@ button:active { transform: scale(0.97); }
     <!-- Download App -->
     <div class="mt-12 bg-slate-800/60 border border-slate-700 rounded-3xl p-8 sm:p-10 flex flex-col sm:flex-row items-center gap-6 justify-between">
       <div class="text-center sm:text-left">
-        <h3 class="font-extrabold text-xl mb-1"><i class="fa-brands fa-android text-emerald-400 mr-2"></i>Pakai lewat aplikasi Android</h3>
-        <p class="text-sm text-slate-400">Lebih cepat, ada scanner kamera &amp; tetap mencatat saat internet mati. Unduh APK gratis.</p>
+        <h3 class="font-extrabold text-xl mb-1"><i class="fa-solid fa-mobile-screen text-emerald-400 mr-2"></i>Belanja dari HP</h3>
+        <p class="text-sm text-slate-400">Buka toko online langsung dari browser HP — ringan, tanpa install.</p>
       </div>
-      <a id="btn-download-apk" href="https://github.com/Thi-Net/TokoBarokah/releases/download/v2.4.5/KelontongPOS-v2.4.5.apk" target="_blank" rel="noopener"
+      <a id="btn-download-apk" href="/shop"
          class="shrink-0 bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-extrabold px-8 min-h-[54px] rounded-2xl shadow-xl shadow-emerald-500/25 inline-flex items-center justify-center">
-        <i class="fa-solid fa-download mr-2"></i>Download App
+        <i class="fa-solid fa-cart-shopping mr-2"></i>Belanja Sekarang
       </a>
     </div>
   </div>
@@ -348,9 +337,9 @@ button:active { transform: scale(0.97); }
     <div class="absolute -bottom-16 -left-12 w-52 h-52 bg-slate-900/10 rounded-full"></div>
     <h2 class="relative text-2xl sm:text-3xl font-black text-slate-900 mb-3">Mau belanja di Toko Barokah?</h2>
     <p class="relative text-slate-900/70 font-medium mb-7 text-sm sm:text-base">Belanja online cukup pakai nomor HP — atau mampir langsung ke toko kami.</p>
-    <button onclick="openLogin()" class="relative bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-lg px-10 min-h-[54px] rounded-2xl shadow-xl">
-      <i class="fa-solid fa-right-to-bracket mr-2"></i>Masuk ke POS
-    </button>
+    <a href="/shop" class="relative bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-lg px-10 min-h-[54px] rounded-2xl shadow-xl inline-flex items-center justify-center">
+      <i class="fa-solid fa-cart-shopping mr-2"></i>Belanja Sekarang
+    </a>
   </div>
 </section>
 
@@ -369,87 +358,6 @@ button:active { transform: scale(0.97); }
   </div>
 </footer>
 
-<!-- MODAL LOGIN -->
-<div id="modal-login" class="fixed inset-0 bg-slate-900/80 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
-  <div class="bg-slate-800 border border-slate-700 rounded-3xl shadow-2xl w-full max-w-sm p-7">
-    <div class="flex justify-between items-center mb-5">
-      <h3 class="font-extrabold text-lg flex items-center gap-2">
-        <span class="w-9 h-9 bg-emerald-500 rounded-xl flex items-center justify-center text-slate-900"><i class="fa-solid fa-lock text-sm"></i></span>
-        Masuk POS
-      </h3>
-      <button onclick="closeLogin()" class="text-slate-400 hover:text-rose-400 min-w-[44px] min-h-[44px]" aria-label="Tutup"><i class="fa-solid fa-xmark text-xl"></i></button>
-    </div>
-    <form onsubmit="return doLogin(event)" class="space-y-4">
-      <div>
-        <label for="login-user" class="block text-xs font-bold text-slate-400 uppercase mb-1.5">Username</label>
-        <input id="login-user" type="text" autocomplete="username" class="w-full bg-slate-900 border border-slate-600 focus:border-emerald-500 rounded-xl px-4 min-h-[48px] text-slate-100 text-sm" required>
-      </div>
-      <div>
-        <label for="login-pass" class="block text-xs font-bold text-slate-400 uppercase mb-1.5">Password</label>
-        <input id="login-pass" type="password" autocomplete="current-password" class="w-full bg-slate-900 border border-slate-600 focus:border-emerald-500 rounded-xl px-4 min-h-[48px] text-slate-100 text-sm" required>
-      </div>
-      <p id="login-err" class="hidden text-sm text-rose-400 font-bold" role="alert"></p>
-      <button type="submit" id="login-btn" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-extrabold min-h-[50px] rounded-xl shadow-lg shadow-emerald-500/25">Masuk</button>
-    </form>
-  </div>
-</div>
-
-<!-- TOMBOL LOGOUT (mengambang, hanya saat login) -->
-<button id="btn-logout" onclick="doLogout()" class="hidden fixed bottom-5 right-5 z-40 bg-slate-800/90 hover:bg-rose-600 border border-slate-600 hover:border-rose-600 text-slate-200 hover:text-white font-bold text-sm px-5 min-h-[48px] rounded-2xl shadow-2xl backdrop-blur">
-  <i class="fa-solid fa-right-from-bracket mr-1.5"></i>Logout
-</button>
-
-<script>
-// ==== KONFIG LOGIN (ubah di sini) ====
-var POS_USERS = [
-  { u: 'taufik', p: 'barokah2026' },
-  { u: 'kasir',  p: 'kasir123' }
-];
-var SESSION_MINUTES = 720; // sesi 12 jam
-
-function getAuth() {
-  try {
-    var s = JSON.parse(localStorage.getItem('kpos_landing_auth') || 'null');
-    return (s && s.exp > Date.now()) ? s : null;
-  } catch (e) { return null; }
-}
-
-// Tampilkan tombol logout / ubah nav sesuai status login
-(function refreshAuthUI() {
-  var auth = getAuth();
-  if (auth) {
-    document.getElementById('btn-logout').classList.remove('hidden');
-    document.getElementById('nav-guest').classList.add('hidden');
-    document.getElementById('nav-auth').classList.remove('hidden');
-  }
-})();
-
-function openLogin() {
-  if (getAuth()) { goPOS(); return; }
-  document.getElementById('modal-login').classList.remove('hidden');
-  setTimeout(function(){ document.getElementById('login-user').focus(); }, 100);
-}
-function closeLogin() { document.getElementById('modal-login').classList.add('hidden'); }
-function doLogin(ev) {
-  ev.preventDefault();
-  var u = document.getElementById('login-user').value.trim().toLowerCase();
-  var p = document.getElementById('login-pass').value;
-  var ok = POS_USERS.some(function(x){ return x.u === u && x.p === p; });
-  if (!ok) {
-    var el = document.getElementById('login-err');
-    el.innerText = 'Username atau password salah.';
-    el.classList.remove('hidden');
-    return false;
-  }
-  localStorage.setItem('kpos_landing_auth', JSON.stringify({ u: u, exp: Date.now() + SESSION_MINUTES * 60000 }));
-  goPOS();
-  return false;
-}
-function goPOS() { window.location.href = '/pos'; }
-function doLogout() {
-  localStorage.removeItem('kpos_landing_auth');
-  location.reload();
-}
 </script>
 </body>
 </html>
