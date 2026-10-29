@@ -364,8 +364,12 @@ button:active { transform: scale(0.97); }
 <div id="modal-clogin" class="fixed inset-0 bg-slate-900/80 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
   <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-7">
     <div class="flex justify-between items-center mb-4">
-      <h3 class="font-extrabold text-lg">Masuk Pelanggan</h3>
+      <h3 id="cl-heading" class="font-extrabold text-lg">Masuk Pelanggan</h3>
       <button onclick="closeCustomerLogin()" class="text-slate-400 hover:text-rose-500 text-xl"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div id="cl-reg-extra" class="hidden">
+      <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nama lengkap</label>
+      <input id="cl-name" type="text" placeholder="Nama kamu" class="w-full border border-slate-300 focus:border-emerald-500 rounded-xl px-4 py-3 mb-3">
     </div>
     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Email</label>
     <input id="cl-email" type="email" placeholder="nama@email.com" class="w-full border border-slate-300 focus:border-emerald-500 rounded-xl px-4 py-3 mb-3">
@@ -373,7 +377,7 @@ button:active { transform: scale(0.97); }
     <input id="cl-pass" type="password" placeholder="Password kamu" class="w-full border border-slate-300 focus:border-emerald-500 rounded-xl px-4 py-3 mb-2">
     <p id="cl-err" class="hidden text-sm text-rose-600 font-bold mb-2"></p>
     <button onclick="customerLogin()" id="cl-btn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3 rounded-xl mb-3">Masuk</button>
-    <p class="text-sm text-slate-500 text-center">Belum punya akun? <a href="/shop" class="text-emerald-700 font-bold underline">Daftar di toko online</a></p>
+    <p id="cl-switch-text" class="text-sm text-slate-500 text-center">Belum punya akun? <button onclick="clShowRegister()" class="text-emerald-700 font-bold underline">Daftar di toko online</button></p>
   </div>
 </div>
 <script>
@@ -386,6 +390,7 @@ function openCustomerLogin() {
     if (s && s.token) { location.href = '/shop'; return; }
   } catch (e) {}
   document.getElementById('cl-err').classList.add('hidden');
+  setClMode(false);
   document.getElementById('modal-clogin').classList.remove('hidden');
   document.getElementById('modal-clogin').classList.add('flex');
   setTimeout(function(){ document.getElementById('cl-email').focus(); }, 80);
@@ -394,24 +399,39 @@ function closeCustomerLogin() {
   var m = document.getElementById('modal-clogin');
   m.classList.add('hidden'); m.classList.remove('flex');
 }
+var clIsRegister = false;
+function clShowRegister() { setClMode(true); }
+function setClMode(register) {
+  clIsRegister = register;
+  document.getElementById('cl-reg-extra').classList.toggle('hidden', !register);
+  document.getElementById('cl-btn').innerText = register ? 'Daftar' : 'Masuk';
+  document.getElementById('cl-heading').innerText = register ? 'Daftar Pelanggan' : 'Masuk Pelanggan';
+  document.getElementById('cl-switch-text').innerHTML = register
+    ? 'Sudah punya akun? <button onclick="setClMode(false)" class="text-emerald-700 font-bold underline">Masuk</button>'
+    : 'Belum punya akun? <button onclick="clShowRegister()" class="text-emerald-700 font-bold underline">Daftar di toko online</button>';
+}
 function customerLogin() {
   var email = (document.getElementById('cl-email').value || '').trim();
   var pass = document.getElementById('cl-pass').value || '';
+  var name = (document.getElementById('cl-name') ? (document.getElementById('cl-name').value || '').trim() : '');
   var err = document.getElementById('cl-err');
   var btn = document.getElementById('cl-btn');
   err.classList.add('hidden');
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { err.innerText = 'Email tidak valid.'; err.classList.remove('hidden'); return; }
-  btn.disabled = true; btn.innerText = 'Masuk...';
-  fetch(SB_URL + '/rest/v1/rpc/shop_login_email', {
+  if (clIsRegister && pass.length < 6) { err.innerText = 'Password minimal 6 karakter.'; err.classList.remove('hidden'); return; }
+  btn.disabled = true; btn.innerText = clIsRegister ? 'Mendaftar...' : 'Masuk...';
+  var url = SB_URL + '/rest/v1/rpc/' + (clIsRegister ? 'shop_register_email' : 'shop_login_email');
+  var body = clIsRegister ? { p_email: email, p_password: pass, p_name: name } : { p_email: email, p_password: pass };
+  fetch(url, {
     method: 'POST',
     headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ p_email: email, p_password: pass })
+    body: JSON.stringify(body)
   }).then(function(r){ return r.json(); }).then(function(res) {
-    btn.disabled = false; btn.innerText = 'Masuk';
-    if (!res.ok) { err.innerText = res.message || 'Login gagal.'; err.classList.remove('hidden'); return; }
+    btn.disabled = false; btn.innerText = clIsRegister ? 'Daftar' : 'Masuk';
+    if (!res.ok) { err.innerText = res.message || 'Gagal.'; err.classList.remove('hidden'); return; }
     localStorage.setItem('shop_session_v1', JSON.stringify({ token: res.token, customerId: res.customerId, email: email, name: res.name }));
     location.href = '/shop';
-  }).catch(function(e) { btn.disabled = false; btn.innerText = 'Masuk'; err.innerText = 'Gagal terhubung.'; err.classList.remove('hidden'); });
+  }).catch(function(e) { btn.disabled = false; btn.innerText = clIsRegister ? 'Daftar' : 'Masuk'; err.innerText = 'Gagal terhubung.'; err.classList.remove('hidden'); });
 }
 document.getElementById('cl-pass').addEventListener('keydown', function(e){ if (e.key === 'Enter') customerLogin(); });
 </script>
