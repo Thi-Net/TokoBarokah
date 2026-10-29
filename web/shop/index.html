@@ -501,6 +501,7 @@ function checkout() {
     if (!res.ok) { showToast(res.message || 'Gagal', 'error'); return; }
     // KERANJANG TIDAK DIKOSONGKAN di sini — dikosongkan hanya setelah bayar sukses
     currentOrder = { id: res.orderId, total: res.total };
+    try { localStorage.setItem('shop_cart_order_id', res.orderId); } catch(e) {}
     closeAll();
     openPay(res.orderId, res.total);
   }).catch(function(e) { btn.disabled = false; btn.innerText = 'Checkout'; showToast('Gagal: ' + e, 'error'); });
@@ -626,7 +627,23 @@ function checkPaymentStatus() {
     }
   }).catch(function() { /* coba lagi di tick berikutnya */ });
 }
-function clearCart() { cart = []; saveCart(); updateCartBadge(); }
+function clearCart() { cart = []; saveCart(); updateCartBadge(); try { localStorage.removeItem('shop_cart_order_id'); } catch(e) {} }
+// FIX #4: keranjang yang sudah dibayar/diproses harus ikut terhapus walau app ditutup saat menunggu pembayaran
+function cleanupPaidCart() {
+  if (!session) return;
+  var pendingId = null;
+  try { pendingId = localStorage.getItem('shop_cart_order_id'); } catch(e) {}
+  if (!pendingId) return;
+  rpc('shop_my_orders', { p_token: session.token }).then(function(res) {
+    var orders = (res && res.orders) || [];
+    for (var i = 0; i < orders.length; i++) {
+      if (orders[i].id === pendingId && orders[i].status !== 'pending') {
+        clearCart(); // sudah dibayar/diproses/dibatalkan -> bersihkan
+        return;
+      }
+    }
+  }).catch(function(e) {});
+}
 
 // Countdown sisa waktu pembayaran di daftar "Akun & Pesanan" (tick global per detik)
 var orderCdTimer = null;
@@ -825,7 +842,10 @@ loadCatalog();
   var _s = document.getElementById('search');
   if (_s && _s.value) { _s.value = ''; }
   if (typeof renderCatalog === 'function') renderCatalog();
-  window.addEventListener('pageshow', function(ev) { if (ev.persisted && typeof renderCatalog === 'function') renderCatalog(); });
+  // FIX: badge keranjang langsung tampil saat load (dari cart tersimpan)
+  if (typeof updateCartBadge === 'function') updateCartBadge();
+  if (typeof cleanupPaidCart === 'function') cleanupPaidCart();
+  window.addEventListener('pageshow', function(ev) { if (ev.persisted) { if (typeof renderCatalog === 'function') renderCatalog(); if (typeof updateCartBadge === 'function') updateCartBadge(); } });
 })();
 </script>
 </body>
