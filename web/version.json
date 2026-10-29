@@ -1,5 +1,5 @@
 {
-  "appVersion": "2.7",
-  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.7/KelontongPOS-v2.7.apk",
-  "notes": "Sinkron penuh dengan web: Pesanan Online, edit produk + foto, badge foto, batal COD saat pengiriman, update-check diperbaiki"
+  "appVersion": "2.7.1",
+  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.7.1/KelontongPOS-v2.7.1.apk",
+  "notes": "Popup update baru (muncul saat buka app, tombol unduh besar), fix info update salah tampil"
 }
