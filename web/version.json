@@ -1,5 +1,5 @@
 {
-  "appVersion": "2.7.5",
-  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.7.5/KelontongPOS-v2.7.5.apk",
-  "notes": "Notifikasi pesanan online walau app tidak dibuka (background service) + perbaikan badge keranjang & bersih-otomatis keranjang"
+  "appVersion": "2.7.6",
+  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.7.6/KelontongPOS-v2.7.6.apk",
+  "notes": "Popup update tengah layar (bisa diklik, tidak tertutup navbar) + notifikasi pesanan walau app tidak dibuka"
 }
