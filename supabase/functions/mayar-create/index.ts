@@ -63,10 +63,13 @@ Deno.serve(async (req: Request) => {
 
     // Nama & HP customer untuk tagihan Mayar
     const { data: cust } = await sb
-      .from('customers').select('name, phone')
+      .from('customers').select('name, phone, email')
       .eq('id', cid).single()
     const custName = cust?.name || 'Pelanggan Toko Barokah'
-    const custPhone = cust?.phone || ''
+    // Mobile harus <=15 karakter & numerik utk Mayar; customer email-based tidak punya HP valid
+    const digits = (cust?.phone || '').replace(/\D/g, '')
+    const custPhone = digits.length >= 9 && digits.length <= 15 ? digits : ''
+    const custEmail = cust?.email || 'cs@tokobarokah.example'
 
     // Guard idempoten: jangan buat tagihan dua kali untuk order yang sama
     const { data: existing } = await sb
@@ -88,10 +91,10 @@ Deno.serve(async (req: Request) => {
       },
       body: JSON.stringify({
         name: custName,
-        email: 'cs@tokobarokah.example', // Mayar wajib minta email; dipakai identitas tagihan
+        email: custEmail,
         mobile: custPhone,
         amount: order.total,
-        description: 'Pesanan ' + orderId + ' — Toko Barokah Bu Tadi (' + (method === 'qris' ? 'QRIS' : 'Transfer') + ')',
+        description: 'Pesanan ' + orderId + ' — Toko Barokah (' + (method === 'qris' ? 'QRIS' : 'Transfer') + ')',
         redirectUrl: SHOP_URL,
         expiredAt: expiredAt,
       }),
