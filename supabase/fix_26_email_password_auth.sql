@@ -45,7 +45,7 @@ begin
     end loop;
     insert into customers (id, phone, name, email) values (v_id, 'EMAIL-' || v_id, p_name, v_email);
   end if;
-  v_salt := encode(gen_random_bytes(12), 'hex');
+  v_salt := replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', '');  -- 64 hex chars
   update customers set pass_salt = v_salt, pass_hash = _shop_pass_hash(v_salt, p_password),
     name = case when coalesce(p_name,'') <> '' then p_name else name end
   where id = v_id;
