@@ -68,7 +68,8 @@ Deno.serve(async (req: Request) => {
     const custName = cust?.name || 'Pelanggan Toko Barokah'
     // Mobile harus <=15 karakter & numerik utk Mayar; customer email-based tidak punya HP valid
     const digits = (cust?.phone || '').replace(/\D/g, '')
-    const custPhone = digits.length >= 9 && digits.length <= 15 ? digits : ''
+    // Mayar wajib mobile 10-15 digit; customer email-based belum punya HP -> placeholder valid
+    const custPhone = digits.length >= 10 && digits.length <= 15 ? digits : '081234567890'
     const custEmail = cust?.email || 'cs@tokobarokah.example'
 
     // Guard idempoten: jangan buat tagihan dua kali untuk order yang sama
