@@ -51,18 +51,17 @@
       <h2 id="auth-title" class="font-extrabold text-lg">Masuk / Daftar</h2>
       <button onclick="closeModal('modal-auth')" class="text-slate-400 hover:text-rose-500 text-xl"><i class="fa-solid fa-xmark"></i></button>
     </div>
-    <div id="auth-step-phone">
-      <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nomor HP / WhatsApp</label>
-      <input id="auth-phone" type="tel" inputmode="numeric" placeholder="08xxxxxxxxxx" class="w-full border border-slate-300 focus:border-emerald-500 rounded-xl px-4 py-3 mb-3">
-      <button onclick="requestOtp()" id="btn-otp" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3 rounded-xl">Kirim OTP</button>
-    </div>
-    <div id="auth-step-otp" class="hidden">
-      <p class="text-sm text-slate-600 mb-2">Masukkan 6 digit OTP. <span class="text-xs">(Mode demo: OTP tampil setelah kirim)</span></p>
-      <input id="auth-otp" type="numeric" inputmode="numeric" maxlength="6" placeholder="______" class="w-full border border-slate-300 focus:border-emerald-500 rounded-xl px-4 py-3 mb-2 text-center text-xl tracking-widest font-bold">
-      <p id="otp-demo" class="hidden text-xs text-emerald-700 font-bold mb-2"></p>
-      <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nama (opsional, utk pelanggan baru)</label>
-      <input id="auth-name" type="text" placeholder="Nama kamu" class="w-full border border-slate-300 focus:border-emerald-500 rounded-xl px-4 py-3 mb-3">
-      <button onclick="verifyOtp()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3 rounded-xl">Verifikasi & Masuk</button>
+    <p id="auth-mode-label" class="text-sm text-slate-600 mb-3">Masuk dengan email dan password. Belum punya akun? <button onclick="toggleAuthMode()" id="auth-toggle" class="text-emerald-700 font-bold underline">Daftar</button></p>
+    <div id="auth-step-login">
+      <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Email</label>
+      <input id="auth-email" type="email" placeholder="nama@email.com" class="w-full border border-slate-300 focus:border-emerald-500 rounded-xl px-4 py-3 mb-3">
+      <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Password</label>
+      <input id="auth-pass" type="password" placeholder="Password kamu" class="w-full border border-slate-300 focus:border-emerald-500 rounded-xl px-4 py-3 mb-3">
+      <div id="auth-reg-extra" class="hidden">
+        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nama lengkap</label>
+        <input id="auth-name" type="text" placeholder="Nama kamu" class="w-full border border-slate-300 focus:border-emerald-500 rounded-xl px-4 py-3 mb-3">
+      </div>
+      <button onclick="authSubmit()" id="btn-auth" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3 rounded-xl">Masuk</button>
     </div>
   </div>
 </div>
@@ -178,7 +177,6 @@ try { cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]'); } catch(e) { ca
 var catalog = [];
 var cart = cart || [];
 var currentPayment = null;
-var pendingPhone = '';
 var activeCat = '';
 var fulfillment = 'pickup';
 var geoPos = null;
@@ -668,42 +666,45 @@ function startOrdersAutoRefresh() {
 function stopOrdersAutoRefresh() { if (ordersRefreshTimer) { clearInterval(ordersRefreshTimer); ordersRefreshTimer = null; } }
 
 // ================== AUTH ==================
+var authIsRegister = false;
 function openAuth() {
   // tutup bubble akun dulu supaya tidak menimpa (issue #7)
   closeModal('modal-account');
-  document.getElementById('auth-step-phone').classList.remove('hidden');
-  document.getElementById('auth-step-otp').classList.add('hidden');
+  setAuthMode(false);
   setTimeout(function(){ document.getElementById('modal-auth').classList.remove('hidden'); document.getElementById('modal-auth').classList.add('flex'); }, 60);
+}
+function setAuthMode(register) {
+  authIsRegister = register;
+  document.getElementById('auth-reg-extra').classList.toggle('hidden', !register);
+  document.getElementById('auth-mode-label').innerHTML = register
+    ? 'Buat akun baru dengan email dan password. Sudah punya akun? <button onclick="toggleAuthMode()" id="auth-toggle" class="text-emerald-700 font-bold underline">Masuk</button>'
+    : 'Masuk dengan email dan password. Belum punya akun? <button onclick="toggleAuthMode()" id="auth-toggle" class="text-emerald-700 font-bold underline">Daftar</button>';
+  document.getElementById('btn-auth').innerText = register ? 'Daftar' : 'Masuk';
+}
+function toggleAuthMode() { setAuthMode(!authIsRegister); }
+function authSubmit() {
+  var email = (document.getElementById('auth-email').value || '').trim();
+  var pass = document.getElementById('auth-pass').value || '';
+  var name = (document.getElementById('auth-name') ? (document.getElementById('auth-name').value || '').trim() : '');
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { showToast('Email tidak valid', 'error'); return; }
+  if (pass.length < 6) { showToast('Password minimal 6 karakter', 'error'); return; }
+  var btn = document.getElementById('btn-auth');
+  btn.disabled = true; btn.innerText = authIsRegister ? 'Mendaftar...' : 'Masuk...';
+  var call = authIsRegister
+    ? rpc('shop_register_email', { p_email: email, p_password: pass, p_name: name })
+    : rpc('shop_login_email', { p_email: email, p_password: pass });
+  call.then(function(res) {
+    btn.disabled = false; btn.innerText = authIsRegister ? 'Daftar' : 'Masuk';
+    if (!res.ok) { showToast(res.message, 'error'); return; }
+    session = { token: res.token, customerId: res.customerId, email: email, name: res.name };
+    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    closeModal('modal-auth'); updateAccountUI(); showToast('Masuk sebagai ' + (res.name || res.customerId), 'ok');
+  }).catch(function(e) { btn.disabled = false; btn.innerText = authIsRegister ? 'Daftar' : 'Masuk'; showToast('Gagal: ' + e, 'error'); });
 }
 function closeAll() {
   ['modal-auth','modal-cart','modal-pay','modal-account'].forEach(closeModal);
 }
-function requestOtp() {
-  var phone = (document.getElementById('auth-phone').value || '').trim();
-  if (phone.replace(/\D/g,'').length < 9) { showToast('Nomor HP tidak valid', 'error'); return; }
-  pendingPhone = phone;
-  var btn = document.getElementById('btn-otp');
-  btn.disabled = true; btn.innerText = 'Mengirim...';
-  rpc('shop_request_otp', { p_phone: phone }).then(function(res) {
-    btn.disabled = false; btn.innerText = 'Kirim OTP';
-    if (!res.ok) { showToast(res.message, 'error'); return; }
-    document.getElementById('auth-step-phone').classList.add('hidden');
-    document.getElementById('auth-step-otp').classList.remove('hidden');
-    var demo = document.getElementById('otp-demo');
-    demo.classList.remove('hidden');
-    demo.innerText = 'OTP demo: ' + res.otp;
-  }).catch(function(e) { btn.disabled = false; btn.innerText = 'Kirim OTP'; showToast('Gagal: ' + e, 'error'); });
-}
-function verifyOtp() {
-  var otp = (document.getElementById('auth-otp').value || '').trim();
-  var name = (document.getElementById('auth-name').value || '').trim();
-  rpc('shop_verify_otp', { p_phone: pendingPhone, p_otp: otp, p_name: name }).then(function(res) {
-    if (!res.ok) { showToast(res.message, 'error'); return; }
-    session = { token: res.token, customerId: res.customerId, phone: pendingPhone, name: res.name };
-    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-    closeModal('modal-auth'); updateAccountUI(); showToast('Masuk sebagai ' + (res.name || res.customerId), 'ok');
-  }).catch(function(e) { showToast('Gagal: ' + e, 'error'); });
-}
+
 function openAccount() {
   updateAccountUI();
   if (session) loadMyOrders();
@@ -715,7 +716,7 @@ function updateAccountUI() {
   document.getElementById('account-guest').classList.toggle('hidden', !!session);
   if (session) {
     document.getElementById('account-name').innerText = session.name || session.customerId;
-    document.getElementById('account-phone').innerText = session.phone;
+    document.getElementById('account-phone').innerText = session.email || '';
   }
 }
 function loadMyOrders() {
