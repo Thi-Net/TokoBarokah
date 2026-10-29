@@ -716,6 +716,9 @@ function authSubmit() {
     session = { token: res.token, customerId: res.customerId, email: email, name: res.name };
     localStorage.setItem(SESSION_KEY, JSON.stringify(session));
     closeModal('modal-auth'); updateAccountUI(); showToast('Masuk sebagai ' + (res.name || res.customerId), 'ok');
+    localStorage.removeItem('shop_status_loaded'); // reset supaya login berikut tidak spam notif lama
+    startStatusWatch();
+    if (window.AndroidBridge && AndroidBridge.setOrderCredentials) AndroidBridge.setOrderCredentials(SB_URL, SB_KEY, session.token);
   }).catch(function(e) { btn.disabled = false; btn.innerText = authIsRegister ? 'Daftar' : 'Masuk'; showToast('Gagal: ' + e, 'error'); });
 }
 function closeAll() {
@@ -828,7 +831,81 @@ function resumePayment(oid) {
 }
 function logout() {
   session = null; localStorage.removeItem(SESSION_KEY);
+  localStorage.removeItem('shop_status_v1'); localStorage.removeItem('shop_status_loaded');
+  stopStatusWatch();
+  if (window.AndroidBridge && AndroidBridge.clearOrderCredentials) AndroidBridge.clearOrderCredentials();
   updateAccountUI(); closeModal('modal-account'); showToast('Keluar.', 'info');
+}
+
+// ================== STATUS WATCHER (realtime) ==================
+// Polling global tiap 15 dtk saat login: deteksi perubahan status pesanan,
+// tampilkan notif native (APK) / toast (web) walau user tidak membuka modal Akun.
+var statusWatchTimer = null;
+var statusLabel = { pending:'Menunggu Bayar', paid:'Dibayar', processing:'Disiapkan', ready:'Siap Diambil', shipping:'Dikirim', completed:'Selesai', cancelled:'Batal' };
+function startStatusWatch() {
+  if (statusWatchTimer) return;
+  statusWatchTimer = setInterval(watchOrderStatuses, 15000);
+  watchOrderStatuses();
+}
+function stopStatusWatch() { if (statusWatchTimer) { clearInterval(statusWatchTimer); statusWatchTimer = null; } }
+function watchOrderStatuses() {
+  if (!session) { stopStatusWatch(); return; }
+  rpc('shop_my_orders', { p_token: session.token }).then(function(res) {
+    if (!res || !res.ok || !res.orders) return;
+    var prev = {};
+    try { prev = JSON.parse(localStorage.getItem('shop_status_v1') || '{}'); } catch(e) { prev = {}; }
+    var firstRun = localStorage.getItem('shop_status_loaded') !== '1';
+    res.orders.forEach(function(o) {
+      var before = prev[o.id];
+      if (!firstRun && before && before !== o.status) {
+        var msg = 'Pesanan ' + (o.id || '').slice(-6) + ': ' + (statusLabel[o.status] || o.status);
+        showToast(msg, 'ok');
+        if (window.AndroidBridge && AndroidBridge.notifyOrder) AndroidBridge.notifyOrder('Toko Barokah', msg);
+      }
+      prev[o.id] = o.status;
+    });
+    localStorage.setItem('shop_status_v1', JSON.stringify(prev));
+    localStorage.setItem('shop_status_loaded', '1');
+  }).catch(function(){});
+}
+
+// ================== POPUP UPDATE VERSI (APK customer) ==================
+var SHOP_CUR = '1.1';
+function checkShopUpdate() {
+  if (!window.AndroidBridge) return; // hanya relevan di APK
+  fetch('/shop-version.json', { cache: 'no-store' }).then(function(r){ return r.json(); }).then(function(info) {
+    var latest = info.appVersion || info.apkVersion || '';
+    if (latest && latest !== SHOP_CUR && isNewer(latest, SHOP_CUR)) {
+      showUpdatePopup(latest, info.apkUrl || info.downloadUrl || '', info.notes || '');
+    }
+  }).catch(function(){});
+}
+function isNewer(a, b) { // bandingkan per segmen angka
+  var pa = String(a).split('.'), pb = String(b).split('.');
+  for (var i = 0; i < Math.max(pa.length, pb.length); i++) {
+    var x = parseInt(pa[i] || '0', 10), y = parseInt(pb[i] || '0', 10);
+    if (x > y) return true; if (x < y) return false;
+  }
+  return false;
+}
+function showUpdatePopup(ver, url, notes) {
+  var old = document.getElementById('modal-shop-update'); if (old) old.remove();
+  var d = document.createElement('div');
+  d.id = 'modal-shop-update';
+  d.className = 'fixed inset-0 z-[999] flex items-center justify-center bg-black/60 p-4';
+  d.innerHTML = '<div class="bg-white rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl">' +
+    '<div class="text-4xl mb-2">🚀</div>' +
+    '<h3 class="text-lg font-extrabold text-slate-800 mb-1">Update Tersedia</h3>' +
+    '<p class="text-sm text-slate-600 mb-1">Versi baru ' + ver + ' sudah siap.</p>' +
+    (notes ? '<p class="text-xs text-slate-500 mb-4">' + notes + '</p>' : '<div class="mb-4"></div>') +
+    '<button id="upd-go" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3 rounded-xl mb-2">Unduh Update</button>' +
+    '<button id="upd-later" class="w-full bg-slate-100 text-slate-700 font-bold py-2.5 rounded-xl text-sm">Nanti saja</button>' +
+    '</div>';
+  document.body.appendChild(d);
+  document.getElementById('upd-go').addEventListener('click', function() {
+    if (window.AndroidBridge && AndroidBridge.openUrl && url) AndroidBridge.openUrl(url);
+  });
+  document.getElementById('upd-later').addEventListener('click', function() { d.remove(); });
 }
 
 // init
@@ -836,6 +913,14 @@ updateAccountUI();
 setFulfillment('pickup');
 fillDeliveryDates();
 loadCatalog();
+if (session) {
+  startStatusWatch();
+  // kirim kredensial ke APK customer utk notif background (service polling per token)
+  if (window.AndroidBridge && AndroidBridge.setOrderCredentials) {
+    AndroidBridge.setOrderCredentials(SB_URL, SB_KEY, session.token);
+  }
+}
+checkShopUpdate();
 </script>
 <script>
 (function(){ // guard: autofill email ke kolom pencarian setelah login

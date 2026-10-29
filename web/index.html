@@ -804,6 +804,10 @@
                 const data = await res.json();
                 if (!data.ok) { showToast(data.message || 'Gagal', 'warning'); box.innerHTML = '<p class="text-sm text-rose-500">' + (data.message || 'Gagal memuat') + '</p>'; return; }
                 try { localStorage.setItem('kpos_admin_pin', pin); } catch (e) {}
+                // service notifikasi background (APK): kirim kredensial utk polling 30 dtk
+                if (window.AndroidBridge && window.AndroidBridge.setOrderCredentials) {
+                    AndroidBridge.setOrderCredentials(localStorage.getItem('kpos_sb_url') || '', localStorage.getItem('kpos_sb_key') || '', pin);
+                }
                 lastOrdersData = data; renderShopOrders(data);
                 checkNewOrders(data);
             } catch (e) {
