@@ -426,6 +426,12 @@
                         localStorage.setItem('kpos_admin_pin', pin);
                         localStorage.setItem('kpos_landing_auth', JSON.stringify({ u: un, exp: Date.now() + SESSION_MINUTES * 60000 }));
                     } catch (e) {}
+                    // kembalikan dashboard: hapus background landing & overlay, tampilkan lagi isi body
+                    var bgEl = document.getElementById('gate-bg'); if (bgEl) bgEl.remove();
+                    Array.prototype.slice.call(document.body.children).forEach(function(el) {
+                        if (el.id !== 'gate-pos') el.style.display = '';
+                    });
+                    document.documentElement.style.background = '';
                     ov.remove();
                 }).catch(function(e) { showErr('Gagal terhubung: ' + e); });
             }

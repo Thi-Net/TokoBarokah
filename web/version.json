@@ -1,5 +1,5 @@
 {
-  "appVersion": "2.7.10",
-  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.7.10/KelontongPOS-v2.7.10.apk",
-  "notes": "Halaman login /pos tampil di atas landing (dashboard tersembunyi sebelum login)"
+  "appVersion": "2.7.11",
+  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.7.11/KelontongPOS-v2.7.11.apk",
+  "notes": "Fix: dashboard langsung tampil setelah login sukses tanpa refresh"
 }
