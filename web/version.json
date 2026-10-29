@@ -1,5 +1,5 @@
 {
-  "appVersion": "2.7.11",
-  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.7.11/KelontongPOS-v2.7.11.apk",
-  "notes": "Fix: dashboard langsung tampil setelah login sukses tanpa refresh"
+  "appVersion": "2.7.12",
+  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.7.12/KelontongPOS-v2.7.12.apk",
+  "notes": "Logo toko baru di seluruh aplikasi"
 }
