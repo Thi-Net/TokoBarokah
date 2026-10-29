@@ -302,7 +302,7 @@
                         <div class="flex justify-between items-center flex-wrap gap-3 mb-4">
                             <h3 class="font-extrabold text-slate-800"><i class="fa-solid fa-bag-shopping text-emerald-600 mr-2"></i>Pesanan Online (Marketplace)</h3>
                             <div class="flex gap-2">
-                                <input id="admin-pin" type="password" placeholder="PIN Admin" class="border border-slate-300 rounded-lg px-3 py-2 text-sm w-32">
+                                <input id="admin-pin" type="password" placeholder="PIN Admin (verifikasi Supabase)" class="border border-slate-300 rounded-lg px-3 py-2 text-sm w-32">
                                 <button onclick="loadShopOrders()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2 rounded-lg">Muat Pesanan</button>
                             </div>
                         </div>
@@ -359,13 +359,15 @@
             ov.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,0.92);display:flex;align-items:center;justify-content:center;padding:20px;';
             ov.innerHTML = '<div style="background:#fff;border-radius:24px;max-width:340px;width:100%;padding:28px;text-align:center;font-family:system-ui,sans-serif">' +
                 '<div style="font-size:40px;margin-bottom:8px">🔐</div>' +
-                '<h3 style="font-size:18px;font-weight:800;color:#1e293b;margin:0 0 4px">Dashboard Admin</h3>' +
-                '<p style="font-size:12px;color:#64748b;margin:0 0 16px">Masukkan PIN Admin untuk membuka POS</p>' +
-                '<input id="gate-pin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="PIN Admin" style="width:100%;box-sizing:border-box;border:2px solid #e2e8f0;border-radius:14px;padding:14px;font-size:18px;text-align:center;letter-spacing:4px;margin-bottom:10px;outline:none" />' +
+                '<h3 style="font-size:18px;font-weight:800;color:#1e293b;margin:0 0 4px">Masuk POS</h3>' +
+                '<p style="font-size:12px;color:#64748b;margin:0 0 16px">Login kasir/admin untuk membuka POS</p>' +
+                '<input id="gate-pin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="PIN Admin (verifikasi Supabase)" style="width:100%;box-sizing:border-box;border:2px solid #e2e8f0;border-radius:14px;padding:14px;font-size:18px;text-align:center;letter-spacing:4px;margin-bottom:10px;outline:none" />' +
                 '<input id="gate-sburl" type="url" placeholder="Supabase URL (sekali saja)" style="display:none;width:100%;box-sizing:border-box;border:2px solid #e2e8f0;border-radius:14px;padding:12px;font-size:13px;margin-bottom:10px;outline:none" />' +
                 '<input id="gate-sbkey" type="text" placeholder="Supabase key (sekali saja)" style="display:none;width:100%;box-sizing:border-box;border:2px solid #e2e8f0;border-radius:14px;padding:12px;font-size:13px;margin-bottom:10px;outline:none" />' +
                 '<p id="gate-err" style="display:none;font-size:12px;color:#e11d48;font-weight:700;margin:0 0 10px"></p>' +
-                '<button id="gate-btn" style="width:100%;background:#059669;color:#fff;border:none;border-radius:14px;padding:14px;font-size:15px;font-weight:800;cursor:pointer">Buka Dashboard</button>' +
+                '<input id="gate-user" type="text" autocomplete="username" placeholder="Username" style="width:100%;box-sizing:border-box;border:2px solid #e2e8f0;border-radius:14px;padding:12px;font-size:14px;margin-bottom:10px;outline:none" />' +
+                '<input id="gate-pass" type="password" autocomplete="current-password" placeholder="Password" style="width:100%;box-sizing:border-box;border:2px solid #e2e8f0;border-radius:14px;padding:12px;font-size:14px;margin-bottom:10px;outline:none" />' +
+                '<button id="gate-btn" style="width:100%;background:#059669;color:#fff;border:none;border-radius:14px;padding:14px;font-size:15px;font-weight:800;cursor:pointer">Masuk</button>' +
                 '<a href="/" style="display:inline-block;margin-top:12px;font-size:12px;color:#64748b;text-decoration:none">← Kembali ke beranda</a>' +
                 '</div>';
             document.body.appendChild(ov);
@@ -373,18 +375,29 @@
             var errEl = document.getElementById('gate-err');
             var btn = document.getElementById('gate-btn');
             setTimeout(function(){ pinEl.focus(); }, 100);
-            function showErr(m) { errEl.innerText = m; errEl.style.display = 'block'; btn.disabled = false; btn.innerText = 'Buka Dashboard'; }
+            var userEl = document.getElementById('gate-user'), passEl = document.getElementById('gate-pass');
+            function showErr(m) { errEl.innerText = m; errEl.style.display = 'block'; btn.disabled = false; btn.innerText = 'Masuk'; }
+            // ==== KREDENSIAL LOGIN POS (ubah di sini) ====
+            var POS_USERS = [
+                { u: 'taufik', p: 'barokah2026' },
+                { u: 'kasir',  p: 'kasir123' }
+            ];
+            var SESSION_MINUTES = 720; // sesi 12 jam
             function submit() {
+                var un = (userEl.value || '').trim().toLowerCase();
+                var pw = passEl.value || '';
+                var okUser = POS_USERS.some(function(x) { return x.u === un && x.p === pw; });
+                if (!okUser) { showErr('Username atau password salah.'); return; }
+                // kredensial web benar -> verifikasi PIN Supabase (ambil dari PIN yang diinput, atau tersimpan)
                 var pin = (pinEl.value || '').trim();
-                if (!pin) { showErr('PIN wajib diisi'); return; }
-                btn.disabled = true; btn.innerText = 'Memverifikasi...';
                 var u = (localStorage.getItem('kpos_sb_url') || '').trim();
                 var k = (localStorage.getItem('kpos_sb_key') || '').trim();
                 var urlEl = document.getElementById('gate-sburl'), keyEl = document.getElementById('gate-sbkey');
                 if (!u || !k) {
                     u = (urlEl.value || '').trim(); k = (keyEl.value || '').trim();
-                    if (!u || !k) { urlEl.style.display = 'block'; keyEl.style.display = 'block'; showErr('Isi Supabase URL & key sekali saja (tersimpan di perangkat ini)'); return; }
+                    if (!u || !k) { urlEl.style.display = 'block'; keyEl.style.display = 'block'; showErr('Isi juga Supabase URL & key (sekali saja, tersimpan di perangkat ini)'); return; }
                 }
+                btn.disabled = true; btn.innerText = 'Memverifikasi...';
                 u = u.replace(/\/$/, '');
                 fetch(u + '/rest/v1/rpc/shop_admin_orders', {
                     method: 'POST',
@@ -396,13 +409,13 @@
                         localStorage.setItem('kpos_sb_url', u);
                         localStorage.setItem('kpos_sb_key', k);
                         localStorage.setItem('kpos_admin_pin', pin);
-                        localStorage.setItem('kpos_landing_auth', JSON.stringify({ exp: Date.now() + 12 * 3600 * 1000 }));
+                        localStorage.setItem('kpos_landing_auth', JSON.stringify({ u: un, exp: Date.now() + SESSION_MINUTES * 60000 }));
                     } catch (e) {}
                     ov.remove();
                 }).catch(function(e) { showErr('Gagal terhubung: ' + e); });
             }
             btn.addEventListener('click', submit);
-            pinEl.addEventListener('keydown', function(e) { if (e.key === 'Enter') submit(); });
+            passEl.addEventListener('keydown', function(e) { if (e.key === 'Enter') submit(); });
         })();
 
         const todayStr = new Date().toISOString().slice(0,10);
@@ -1442,7 +1455,7 @@ async function saveEditProduct() {
     <div id="ep-units" class="space-y-2 mb-2"></div>
     <button onclick="epAddUnitRow()" class="text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg px-3 py-2 mb-4"><i class="fa-solid fa-plus mr-1"></i>Tambah Satuan</button>
     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">PIN Admin</label>
-    <input id="ep-pin" type="password" inputmode="numeric" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm mb-4" placeholder="PIN Admin">
+    <input id="ep-pin" type="password" inputmode="numeric" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm mb-4" placeholder="PIN Admin (verifikasi Supabase)">
     <button id="btn-ep-save" onclick="saveEditProduct()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-extrabold py-3 rounded-xl"><i class="fa-solid fa-floppy-disk mr-1"></i>Simpan Perubahan</button>
   </div>
 </div>
@@ -1455,7 +1468,7 @@ async function saveEditProduct() {
     </div>
     <p id="photo-product-label" class="text-sm font-bold text-slate-700 mb-3"></p>
     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">PIN Admin</label>
-    <input id="photo-pin" type="password" inputmode="numeric" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm mb-3" placeholder="PIN Admin">
+    <input id="photo-pin" type="password" inputmode="numeric" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm mb-3" placeholder="PIN Admin (verifikasi Supabase)">
     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Foto (JPG/PNG, maks 6 MB)</label>
     <input id="photo-file" type="file" accept="image/jpeg,image/png,image/webp" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm mb-3">
     <img id="photo-preview" class="hidden w-full aspect-square object-cover rounded-xl mb-3 bg-slate-100">
