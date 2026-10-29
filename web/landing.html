@@ -67,9 +67,9 @@ button:active { transform: scale(0.97); }
     <a href="/shop" class="bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-bold text-sm px-5 min-h-[44px] rounded-xl shadow-lg shadow-emerald-500/30 inline-flex items-center">
       <i class="fa-solid fa-cart-shopping mr-1.5"></i>Belanja Online
     </a>
-    <a href="/shop" class="bg-slate-800 hover:bg-slate-700 text-slate-100 font-bold text-sm px-4 min-h-[44px] rounded-xl border border-slate-700 inline-flex items-center">
+    <button onclick="openCustomerLogin()" class="bg-slate-800 hover:bg-slate-700 text-slate-100 font-bold text-sm px-4 min-h-[44px] rounded-xl border border-slate-700 inline-flex items-center">
       <i class="fa-solid fa-right-to-bracket mr-1.5"></i>Masuk
-    </a>
+    </button>
   </div>
 </nav>
 
@@ -358,6 +358,62 @@ button:active { transform: scale(0.97); }
   </div>
 </footer>
 
+</script>
+
+<!-- MODAL LOGIN CUSTOMER -->
+<div id="modal-clogin" class="fixed inset-0 bg-slate-900/80 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+  <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-7">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="font-extrabold text-lg">Masuk Pelanggan</h3>
+      <button onclick="closeCustomerLogin()" class="text-slate-400 hover:text-rose-500 text-xl"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Email</label>
+    <input id="cl-email" type="email" placeholder="nama@email.com" class="w-full border border-slate-300 focus:border-emerald-500 rounded-xl px-4 py-3 mb-3">
+    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Password</label>
+    <input id="cl-pass" type="password" placeholder="Password kamu" class="w-full border border-slate-300 focus:border-emerald-500 rounded-xl px-4 py-3 mb-2">
+    <p id="cl-err" class="hidden text-sm text-rose-600 font-bold mb-2"></p>
+    <button onclick="customerLogin()" id="cl-btn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3 rounded-xl mb-3">Masuk</button>
+    <p class="text-sm text-slate-500 text-center">Belum punya akun? <a href="/shop" class="text-emerald-700 font-bold underline">Daftar di toko online</a></p>
+  </div>
+</div>
+<script>
+var SB_URL = 'https://zosdcuiulgpjevgbyquw.supabase.co';
+var SB_KEY = 'sb_publishable_ZyeF0KWUjAuH9quXYELRuw_HlDDlBo0';
+function openCustomerLogin() {
+  // sudah punya sesi di shop? langsung ke /shop
+  try {
+    var s = JSON.parse(localStorage.getItem('shop_session_v1') || 'null');
+    if (s && s.token) { location.href = '/shop'; return; }
+  } catch (e) {}
+  document.getElementById('cl-err').classList.add('hidden');
+  document.getElementById('modal-clogin').classList.remove('hidden');
+  document.getElementById('modal-clogin').classList.add('flex');
+  setTimeout(function(){ document.getElementById('cl-email').focus(); }, 80);
+}
+function closeCustomerLogin() {
+  var m = document.getElementById('modal-clogin');
+  m.classList.add('hidden'); m.classList.remove('flex');
+}
+function customerLogin() {
+  var email = (document.getElementById('cl-email').value || '').trim();
+  var pass = document.getElementById('cl-pass').value || '';
+  var err = document.getElementById('cl-err');
+  var btn = document.getElementById('cl-btn');
+  err.classList.add('hidden');
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { err.innerText = 'Email tidak valid.'; err.classList.remove('hidden'); return; }
+  btn.disabled = true; btn.innerText = 'Masuk...';
+  fetch(SB_URL + '/rest/v1/rpc/shop_login_email', {
+    method: 'POST',
+    headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ p_email: email, p_password: pass })
+  }).then(function(r){ return r.json(); }).then(function(res) {
+    btn.disabled = false; btn.innerText = 'Masuk';
+    if (!res.ok) { err.innerText = res.message || 'Login gagal.'; err.classList.remove('hidden'); return; }
+    localStorage.setItem('shop_session_v1', JSON.stringify({ token: res.token, customerId: res.customerId, email: email, name: res.name }));
+    location.href = '/shop';
+  }).catch(function(e) { btn.disabled = false; btn.innerText = 'Masuk'; err.innerText = 'Gagal terhubung.'; err.classList.remove('hidden'); });
+}
+document.getElementById('cl-pass').addEventListener('keydown', function(e){ if (e.key === 'Enter') customerLogin(); });
 </script>
 </body>
 </html>

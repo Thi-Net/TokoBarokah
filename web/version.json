@@ -1,5 +1,5 @@
 {
-  "appVersion": "2.6.1",
-  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.6.1/KelontongPOS-v2.6.1.apk",
-  "notes": "Laporan Excel: kolom Invoice kembali di sheet Pembelian + kolom Harga Satuan di sheet Penjualan"
+  "appVersion": "2.7",
+  "apkUrl": "https://github.com/Thi-Net/TokoBarokah/releases/download/v2.7/KelontongPOS-v2.7.apk",
+  "notes": "Sinkron penuh dengan web: Pesanan Online, edit produk + foto, badge foto, batal COD saat pengiriman, update-check diperbaiki"
 }
