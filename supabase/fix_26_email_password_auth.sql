@@ -16,7 +16,7 @@ create extension if not exists pgcrypto;
 
 create or replace function _shop_pass_hash(p_salt text, p_pass text)
 returns text language sql immutable as $$
-  select encode(digest(p_salt || p_pass, 'sha256'), 'hex');
+  select encode(sha256((p_salt || p_pass)::bytea), 'hex');  -- sha256() built-in Postgres 11+, tanpa pgcrypto
 $$;
 
 -- 3. Daftar / set password (upsert customer by email)
