@@ -833,10 +833,14 @@ function resumePayment(oid) {
 }
 function logout() {
   session = null; localStorage.removeItem(SESSION_KEY);
+  // keranjang milik sesi: kosongkan saat logout, isi lagi saat login baru
+  cart = []; saveCart(); updateCartBadge();
   localStorage.removeItem('shop_status_v1'); localStorage.removeItem('shop_status_loaded');
   stopStatusWatch();
   if (window.AndroidBridge && AndroidBridge.clearOrderCredentials) AndroidBridge.clearOrderCredentials();
   updateAccountUI(); closeModal('modal-account'); showToast('Keluar.', 'info');
+  // pelanggan logout di /shop diarahkan kembali ke landing
+  setTimeout(function(){ window.location.href = '/'; }, 600);
 }
 
 // ================== STATUS WATCHER (realtime) ==================
@@ -926,6 +930,8 @@ checkShopUpdate();
 </script>
 <script>
 (function(){ // guard: autofill email ke kolom pencarian setelah login
+  // keranjang hanya relevan saat login — logout/login beda akun = keranjang mulai kosong
+  if (!session && cart.length) { cart = []; try { localStorage.removeItem('shop_cart_order_id'); } catch(e) {} }
   var _s = document.getElementById('search');
   if (_s && _s.value) { _s.value = ''; }
   if (typeof renderCatalog === 'function') renderCatalog();
