@@ -1226,6 +1226,10 @@
                             ${arrow}
                         </div>
                     </div>
+                    ${g.openCount > 0 ? `<div class="flex gap-2 justify-end">
+                        <button onclick="event.stopPropagation(); openCicil(null, ${g.remaining}, '${g.creditorId}', '${String(g.creditorName || '').replace(/'/g, '&#39;')}')" class="bg-blue-600 hover:bg-blue-500 text-white font-bold text-[11px] px-3 py-1.5 rounded-lg">Cicil</button>
+                        <button onclick="event.stopPropagation(); markCreditorPaid('${g.creditorId}')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] px-3 py-1.5 rounded-lg">Lunas Semua</button>
+                    </div>` : ''}
                     <div id="piutang-detail-${g.creditorId}" class="hidden space-y-2 border-t border-amber-200 pt-2"></div>
                 </div>`;
             }).join('');
@@ -1260,10 +1264,6 @@
                         ${items ? `<div class="space-y-1">${items}</div>` : ''}
                         ${open && paid > 0 ? `<p class="text-[11px] text-slate-500">Sisa: <b class="text-rose-600">Rp${remaining.toLocaleString('id-ID')}</b></p>` : ''}
                         ${payHist ? `<div class="space-y-1">${payHist}</div>` : ''}
-                        ${open ? `<div class="flex gap-2 justify-end">
-                            <button onclick="openCicil('${d.id}', ${remaining})" class="bg-blue-600 hover:bg-blue-500 text-white font-bold text-[11px] px-3 py-1.5 rounded-lg">Cicil</button>
-                            <button onclick="markDebtPaid('${d.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] px-3 py-1.5 rounded-lg">Lunas Sekaligus</button>
-                        </div>` : ''}
                     </div>`;
                 }).join('');
                 el.dataset.rendered = '1';
@@ -1273,9 +1273,11 @@
         }
 
         let cicilDebtId = null;
-        function openCicil(debtId, remaining) {
+        let cicilCreditorId = null;
+        function openCicil(debtId, remaining, creditorId, creditorName) {
             cicilDebtId = debtId;
-            document.getElementById('cicil-info').innerText = 'Sisa utang: Rp' + Number(remaining).toLocaleString('id-ID');
+            cicilCreditorId = creditorId || null;
+            document.getElementById('cicil-info').innerText = (creditorName ? creditorName + ' — ' : '') + 'Sisa utang: Rp' + Number(remaining).toLocaleString('id-ID');
             document.getElementById('cicil-amount').value = '';
             document.getElementById('cicil-note').value = '';
             const m = document.getElementById('modal-cicil');
@@ -1292,16 +1294,41 @@
             const btn = document.getElementById('btn-cicil-submit');
             btn.disabled = true; btn.innerText = 'Menyimpan...';
             try {
-                const res = await fetch((localStorage.getItem('kpos_sb_url') || '') + '/rest/v1/rpc/add_debt_payment', {
-                    method: 'POST',
-                    headers: { 'apikey': localStorage.getItem('kpos_sb_key') || '', 'Authorization': 'Bearer ' + (localStorage.getItem('kpos_sb_key') || ''), 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ p_pin: pin, p_debt_id: cicilDebtId, p_amount: amount, p_note: note || null })
-                });
+                let res;
+                if (cicilCreditorId) {
+                    // cicilan per NAMA: server alokasikan ke transaksi tertua dulu
+                    res = await fetch((localStorage.getItem('kpos_sb_url') || '') + '/rest/v1/rpc/pay_creditor', {
+                        method: 'POST',
+                        headers: { 'apikey': localStorage.getItem('kpos_sb_key') || '', 'Authorization': 'Bearer ' + (localStorage.getItem('kpos_sb_key') || ''), 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ p_pin: pin, p_creditor_id: cicilCreditorId, p_amount: amount, p_note: note || null })
+                    });
+                } else {
+                    res = await fetch((localStorage.getItem('kpos_sb_url') || '') + '/rest/v1/rpc/add_debt_payment', {
+                        method: 'POST',
+                        headers: { 'apikey': localStorage.getItem('kpos_sb_key') || '', 'Authorization': 'Bearer ' + (localStorage.getItem('kpos_sb_key') || ''), 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ p_pin: pin, p_debt_id: cicilDebtId, p_amount: amount, p_note: note || null })
+                    });
+                }
                 const data = await res.json();
                 showToast(data.message || '', data.ok ? 'success' : 'warning');
                 if (data.ok) { closeCicil(); loadPiutang(); }
             } catch (e) { showToast('Gagal: ' + e, 'warning'); }
             btn.disabled = false; btn.innerText = 'Simpan Cicilan';
+        }
+
+        async function markCreditorPaid(creditorId) {
+            const pin = (document.getElementById('piutang-pin').value || '').trim() || localStorage.getItem('kpos_admin_pin') || '';
+            if (!pin) { showToast('Masukkan PIN Admin dulu', 'warning'); return; }
+            try {
+                const res = await fetch((localStorage.getItem('kpos_sb_url') || '') + '/rest/v1/rpc/pay_creditor', {
+                    method: 'POST',
+                    headers: { 'apikey': localStorage.getItem('kpos_sb_key') || '', 'Authorization': 'Bearer ' + (localStorage.getItem('kpos_sb_key') || ''), 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ p_pin: pin, p_creditor_id: creditorId, p_amount: null })
+                });
+                const data = await res.json();
+                showToast(data.message || '', data.ok ? 'success' : 'warning');
+                if (data.ok) loadPiutang();
+            } catch (e) { showToast('Gagal: ' + e, 'warning'); }
         }
 
         async function markDebtPaid(debtId) {
