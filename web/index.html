@@ -208,6 +208,10 @@
                                 <label class="block text-xs font-bold text-slate-500 uppercase mb-1">PIN Admin (wajib utk bon)</label>
                                 <input id="co-pin" type="password" inputmode="numeric" class="w-full border rounded-xl px-4 py-2.5 text-sm bg-slate-50">
                             </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Catatan (opsional)</label>
+                                <input id="co-note" type="text" placeholder="mis. utk Bu Ani / pesanan kantor" class="w-full border rounded-xl px-4 py-2.5 text-sm bg-slate-50">
+                            </div>
                             <button type="button" id="btn-co-confirm" onclick="submitCheckout()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-sm transition">Konfirmasi Bayar</button>
                         </div>
                     </div>
@@ -322,6 +326,10 @@
                             <div class="flex justify-between p-3 bg-blue-50 rounded-xl font-bold text-blue-900"><span>Laba Kotor:</span><span id="rep-gross">Rp 0</span></div>
                             <div class="flex justify-between p-3 bg-slate-50 rounded-xl font-bold"><span>Pengeluaran:</span><span id="rep-exp" class="text-rose-600">Rp 0</span></div>
                             <div class="flex justify-between p-4 bg-indigo-50 rounded-xl font-black text-indigo-900 border"><span>Laba Bersih:</span><span id="rep-net">Rp 0</span></div>
+                        </div>
+                        <div id="rep-debts-box" class="hidden">
+                            <p class="text-xs font-bold text-slate-500 uppercase mb-2"><i class="fa-solid fa-hand-holding-dollar text-amber-600 mr-1"></i> Rincian Piutang (Bon) Periode Ini</p>
+                            <div id="rep-debts" class="space-y-2"></div>
                         </div>
                         <button onclick="downloadExcelReport()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-sm transition"><i class="fa-solid fa-file-excel mr-2"></i> Download Excel (.xlsx)</button>
                     </div>
@@ -756,6 +764,16 @@
                 document.getElementById('rep-gross').innerText = formatRp(num(f.grossProfit));
                 document.getElementById('rep-exp').innerText = formatRp(num(f.expenses));
                 document.getElementById('rep-net').innerText = formatRp(num(f.netProfit));
+                // Rincian piutang (dihasilkan server: dijumlahkan per nama)
+                const dBox = document.getElementById('rep-debts-box'), dList = document.getElementById('rep-debts');
+                const rd = (r && r.rawDebts) ? r.rawDebts : [];
+                if (rd.length) {
+                    dBox.classList.remove('hidden');
+                    dList.innerHTML = rd.map(d => `<div class="flex justify-between items-center p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs">
+                        <div><p class="font-bold text-slate-800">${d.creditorName}</p><p class="text-slate-500">${d.count} transaksi${Number(d.remaining) > 0 ? ' • sisa <b class="text-rose-600">' + formatRp(Number(d.remaining)) + '</b>' : ' • lunas'}</p></div>
+                        <p class="font-black text-amber-700">${formatRp(Number(d.total))}</p>
+                    </div>`).join('');
+                } else { dBox.classList.add('hidden'); dList.innerHTML = ''; }
             }).getFilteredFinancialReport(periodType, dateVal);
         }
 
@@ -770,6 +788,7 @@
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["ID", "Waktu", "Produk", "Satuan", "Qty", "Harga Satuan", "Omzet", "HPP", "Laba Kotor"], ...r.rawSales]), "Penjualan");
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["ID", "Waktu", "Supplier", "Invoice", "Produk", "Satuan", "Qty Beli", "Total Harga"], ...r.rawPurchases]), "Pembelian");
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["ID", "Waktu", "Kategori", "Deskripsi", "Jumlah", "Metode"], ...r.rawExpenses]), "Pengeluaran");
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["Nama", "Jml Transaksi", "Total Bon", "Sisa Utang", "Terakhir"], ...((r.rawDebts || []).map(d => [d.creditorName, d.count, d.total, d.remaining, d.lastAt]))]), "Piutang");
                 
                 const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
                 downloadBlob(new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), `Laporan_${periodType}_${dateVal}.xlsx`);
@@ -1179,29 +1198,78 @@
             const box = document.getElementById('piutang-list');
             const debts = data.debts || [];
             if (!debts.length) { box.innerHTML = '<div class="p-3 bg-emerald-50 text-emerald-700 rounded-xl text-xs text-center font-bold">Tidak ada piutang 🎉</div>'; return; }
-            box.innerHTML = debts.map(d => {
-                const open = d.status === 'open';
-                const dt = d.createdAt ? new Date(d.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
-                const paid = Number(d.paid || 0), remaining = Number(d.remaining !== undefined ? d.remaining : (open ? d.amount - paid : 0));
-                const payHist = (d.payments || []).map(p => `<div class="flex justify-between text-[11px] text-slate-500 pl-2 border-l-2 border-emerald-200"><span>${p.createdAt ? new Date(p.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) : ''}${p.note ? ' • ' + p.note : ''}</span><span class="font-bold text-emerald-700">Rp${Number(p.amount || 0).toLocaleString('id-ID')}</span></div>`).join('');
-                return `<div class="p-3 rounded-xl border space-y-2 ${open ? 'bg-amber-50 border-amber-200' : 'bg-slate-50 border-slate-200 opacity-70'}">
-                    <div class="flex justify-between items-center gap-2">
-                        <div>
-                            <p class="font-bold text-sm text-slate-800">${d.creditorName} ${open ? '<span class="text-[10px] px-2 py-0.5 bg-amber-200 text-amber-800 rounded font-bold">BELUM BAYAR</span>' : '<span class="text-[10px] px-2 py-0.5 bg-emerald-200 text-emerald-800 rounded font-bold">LUNAS</span>'}</p>
-                            <p class="text-xs text-slate-500">${d.id} • ${dt}</p>
+            // Kelompokkan per nama peminjam: nominal dijumlahkan, klik nama = buka rincian transaksi
+            const groups = {};
+            debts.forEach(d => {
+                const key = d.creditorId || d.creditorName;
+                if (!groups[key]) groups[key] = { creditorId: d.creditorId, creditorName: d.creditorName, open: 0, paidSum: 0, remaining: 0, total: 0, openCount: 0, list: [] };
+                const paid = Number(d.paid || 0), remaining = Number(d.remaining !== undefined ? d.remaining : (d.status === 'open' ? d.amount - paid : 0));
+                groups[key].total += Number(d.amount || 0);
+                groups[key].paidSum += paid;
+                if (d.status === 'open') { groups[key].open += remaining; groups[key].remaining += remaining; groups[key].openCount++; }
+                groups[key].list.push(d);
+            });
+            box.innerHTML = Object.keys(groups).map(key => {
+                const g = groups[key];
+                const arrow = '<i id="piutang-arrow-' + g.creditorId + '" class="fa-solid fa-chevron-down text-slate-400 text-xs"></i>';
+                return `<div class="p-3 rounded-xl border space-y-2 ${g.openCount > 0 ? 'bg-amber-50 border-amber-200' : 'bg-slate-50 border-slate-200'}">
+                    <div class="flex justify-between items-center gap-2 cursor-pointer select-none" onclick="toggleDebtDetail('${g.creditorId}')">
+                        <div class="min-w-0">
+                            <p class="font-bold text-sm text-slate-800 truncate"><i class="fa-solid fa-user text-slate-400 text-xs mr-1"></i>${g.creditorName} ${g.openCount > 0 ? '<span class="text-[10px] px-2 py-0.5 bg-amber-200 text-amber-800 rounded font-bold">' + g.openCount + ' BON BELUM BAYAR</span>' : '<span class="text-[10px] px-2 py-0.5 bg-emerald-200 text-emerald-800 rounded font-bold">SEMUA LUNAS</span>'}</p>
+                            <p class="text-xs text-slate-500">${g.list.length} transaksi${g.paidSum > 0 ? ' • sudah dibayar Rp' + Number(g.paidSum).toLocaleString('id-ID') : ''}</p>
                         </div>
-                        <div class="text-right shrink-0">
-                            <p class="font-black ${open ? 'text-amber-700' : 'text-slate-500'}">Rp${Number(d.amount || 0).toLocaleString('id-ID')}</p>
-                            ${open && paid > 0 ? `<p class="text-[11px] text-slate-500">Sisa: <b class="text-rose-600">Rp${remaining.toLocaleString('id-ID')}</b></p>` : ''}
+                        <div class="text-right shrink-0 flex items-center gap-2">
+                            <div>
+                                <p class="font-black ${g.openCount > 0 ? 'text-amber-700' : 'text-slate-500'}">Rp${Number(g.total).toLocaleString('id-ID')}</p>
+                                ${g.openCount > 0 ? `<p class="text-[11px] text-slate-500">Sisa: <b class="text-rose-600">Rp${Number(g.remaining).toLocaleString('id-ID')}</b></p>` : ''}
+                            </div>
+                            ${arrow}
                         </div>
                     </div>
-                    ${payHist ? `<div class="space-y-1">${payHist}</div>` : ''}
-                    ${open ? `<div class="flex gap-2 justify-end">
-                        <button onclick="openCicil('${d.id}', ${remaining})" class="bg-blue-600 hover:bg-blue-500 text-white font-bold text-[11px] px-3 py-1.5 rounded-lg">Cicil</button>
-                        <button onclick="markDebtPaid('${d.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] px-3 py-1.5 rounded-lg">Lunas Sekaligus</button>
-                    </div>` : ''}
+                    <div id="piutang-detail-${g.creditorId}" class="hidden space-y-2 border-t border-amber-200 pt-2"></div>
                 </div>`;
             }).join('');
+            // simpan data utk rincian
+            piutangData = data;
+        }
+
+        function toggleDebtDetail(creditorId) {
+            const el = document.getElementById('piutang-detail-' + creditorId);
+            const arrow = document.getElementById('piutang-arrow-' + creditorId);
+            if (!el) return;
+            if (!el.classList.contains('hidden')) {
+                el.classList.add('hidden');
+                if (arrow) arrow.className = 'fa-solid fa-chevron-down text-slate-400 text-xs';
+                return;
+            }
+            // render rincian sekali, lalu tampilkan
+            if (!el.dataset.rendered) {
+                const debts = ((piutangData && piutangData.debts) || []).filter(d => String(d.creditorId) === String(creditorId));
+                el.innerHTML = debts.map(d => {
+                    const open = d.status === 'open';
+                    const dt = d.createdAt ? new Date(d.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+                    const paid = Number(d.paid || 0), remaining = Number(d.remaining !== undefined ? d.remaining : (open ? d.amount - paid : 0));
+                    const items = (d.items || []).map(it => `<div class="flex justify-between text-[11px] text-slate-600 pl-2 border-l-2 border-slate-300"><span>${it.name} — ${Number(it.qty).toLocaleString('id-ID')} ${it.unit} × Rp${Number(it.price).toLocaleString('id-ID')}</span><span class="font-bold">Rp${Number(it.total).toLocaleString('id-ID')}</span></div>`).join('');
+                    const payHist = (d.payments || []).map(p => `<div class="flex justify-between text-[11px] text-slate-500 pl-2 border-l-2 border-emerald-200"><span>${p.createdAt ? new Date(p.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) : ''}${p.note ? ' • ' + p.note : ''}</span><span class="font-bold text-emerald-700">Rp${Number(p.amount || 0).toLocaleString('id-ID')}</span></div>`).join('');
+                    return `<div class="p-2.5 rounded-lg border space-y-2 bg-white border-slate-200">
+                        <div class="flex justify-between items-center gap-2">
+                            <p class="text-xs font-bold text-slate-700">${d.id} • ${dt} ${open ? '<span class="text-[10px] px-2 py-0.5 bg-amber-200 text-amber-800 rounded font-bold">BELUM BAYAR</span>' : '<span class="text-[10px] px-2 py-0.5 bg-emerald-200 text-emerald-800 rounded font-bold">LUNAS</span>'}</p>
+                            <p class="font-black text-sm ${open ? 'text-amber-700' : 'text-slate-500'}">Rp${Number(d.amount || 0).toLocaleString('id-ID')}</p>
+                        </div>
+                        ${d.note ? '<p class="text-[11px] text-slate-500"><b>Catatan:</b> ' + d.note + '</p>' : ''}
+                        ${items ? `<div class="space-y-1">${items}</div>` : ''}
+                        ${open && paid > 0 ? `<p class="text-[11px] text-slate-500">Sisa: <b class="text-rose-600">Rp${remaining.toLocaleString('id-ID')}</b></p>` : ''}
+                        ${payHist ? `<div class="space-y-1">${payHist}</div>` : ''}
+                        ${open ? `<div class="flex gap-2 justify-end">
+                            <button onclick="openCicil('${d.id}', ${remaining})" class="bg-blue-600 hover:bg-blue-500 text-white font-bold text-[11px] px-3 py-1.5 rounded-lg">Cicil</button>
+                            <button onclick="markDebtPaid('${d.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] px-3 py-1.5 rounded-lg">Lunas Sekaligus</button>
+                        </div>` : ''}
+                    </div>`;
+                }).join('');
+                el.dataset.rendered = '1';
+            }
+            el.classList.remove('hidden');
+            if (arrow) arrow.className = 'fa-solid fa-chevron-up text-slate-400 text-xs';
         }
 
         let cicilDebtId = null;
@@ -1321,6 +1389,7 @@
             coLoadCreditors();
             const m = document.getElementById('modal-checkout');
             m.classList.remove('hidden'); m.classList.add('flex');
+            document.getElementById('co-note').value = '';
         }
 
         function coOnMethod() {
@@ -1363,6 +1432,7 @@
             if(method === 'bon' && !creditorId) { showToast('Pilih nama yg utang dulu (atau tambah baru)', 'warning'); return; }
             const pin = method === 'bon' ? (document.getElementById('co-pin').value || '').trim() : null;
             if(method === 'bon' && !pin) { showToast('Isi PIN Admin untuk pembayaran bon', 'warning'); return; }
+            const coNote = (document.getElementById('co-note').value || '').trim() || null;
             const btn = document.getElementById('btn-co-confirm');
             btn.disabled = true; btn.innerText = 'Memproses...';
             closeCheckoutModal();
@@ -1371,7 +1441,7 @@
                 if(res && res.status === 'queued_offline') { cartItems = []; renderCart(); loadDashboardData(); return; }
                 showToast('Transaksi Berhasil!' + (res && res.paymentMethod === 'bon' ? ' (Bon tercatat di Piutang)' : ''), 'success');
                 cartItems = []; renderCart(); loadDashboardData();
-            }).withFailureHandler(err => { btn.disabled = false; btn.innerText = 'Konfirmasi Bayar'; document.getElementById('btn-checkout').disabled = false; document.getElementById('btn-checkout').innerText = 'Bayar'; showToast(err.message, 'warning'); }).processMultiSale(cartItems, method, creditorId, pin);
+            }).withFailureHandler(err => { btn.disabled = false; btn.innerText = 'Konfirmasi Bayar'; document.getElementById('btn-checkout').disabled = false; document.getElementById('btn-checkout').innerText = 'Bayar'; showToast(err.message, 'warning'); }).processMultiSale(cartItems, method, creditorId, pin, coNote);
         }
 
         function loadProductsData() {

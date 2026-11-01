@@ -21,7 +21,7 @@ const FN_MAP = {
   checkProductExists:           { rpc: 'check_product_exists', args: ['p_name', 'p_unit'] },
   getRawSheetData:              { rpc: 'get_raw_table', args: ['p_table'] },
   updateSellingPrice:           { rpc: 'update_selling_price', args: ['p_product_id', 'p_unit_name', 'p_new_price'] },
-  processMultiSale:             { rpc: 'process_multi_sale', args: ['p_items', 'p_payment_method', 'p_creditor_id', 'p_pin'] },
+  processMultiSale:             { rpc: 'process_multi_sale', args: ['p_items', 'p_payment_method', 'p_creditor_id', 'p_pin', 'p_note'] },
   getCreditors:                 { rpc: 'get_creditors', args: [] },
 };
 
