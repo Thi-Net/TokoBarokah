@@ -511,6 +511,9 @@
                     });
                     document.documentElement.style.background = '';
                     ov.remove();
+                    if (typeof clearSearchAutofill === 'function') clearSearchAutofill();
+                    setTimeout(function() { if (typeof clearSearchAutofill === 'function') clearSearchAutofill(); }, 300);
+                    setTimeout(function() { if (typeof clearSearchAutofill === 'function') clearSearchAutofill(); }, 1500);
                 }).catch(function(e) { showErr('Gagal terhubung: ' + e); });
             }
             btn.addEventListener('click', submit);
@@ -1471,7 +1474,17 @@
             }).withFailureHandler(err => { btn.disabled = false; btn.innerText = 'Konfirmasi Bayar'; document.getElementById('btn-checkout').disabled = false; document.getElementById('btn-checkout').innerText = 'Bayar'; showToast(err.message, 'warning'); }).processMultiSale(cartItems, method, creditorId, pin, coNote);
         }
 
+        // Kolom search bukan kolom email: pengelola sandi kadang menumpahkan
+        // email ke input teks pertama saat saran diklik. Bersihkan di titik kunci.
+        function clearSearchAutofill() {
+            ['sale-search', 'pur-search', 'op-search'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el && el.value && el.value.indexOf('@') !== -1) { el.value = ''; }
+            });
+        }
+
         function loadProductsData() {
+            clearSearchAutofill();
             if (typeof google !== 'undefined' && google.script && google.script.run) {
                 google.script.run.withSuccessHandler(prods => { globalProducts = prods; renderProductTable(prods); }).getActiveProductsList();
             }
