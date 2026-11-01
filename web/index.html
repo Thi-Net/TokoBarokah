@@ -533,7 +533,7 @@
         async function checkAppUpdate() {
             try {
                 const cur = '2.7.13';
-                const res = await fetch('https://tokobarokah.vercel.app/version.json?t=' + Date.now());
+                const res = await fetch('https://tokobarokahonline.my.id/version.json?t=' + Date.now());
                 const info = await res.json();
                 var ver = info.apkVersion || info.appVersion;
                 if (ver && isNewer(ver, cur)) showUpdateBanner(ver, info.apkUrl);
