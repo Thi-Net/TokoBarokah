@@ -1,0 +1,50 @@
+name: Alias production domain after deploy
+
+on:
+  deployment_status:
+  workflow_run:
+    workflows: ["Vercel", "vercel-app"]
+    types: [completed]
+  # fallback: setiap push ke main, cek alias setelah deployment vercel selesai
+  push:
+    branches: [main]
+
+jobs:
+  alias:
+    # hanya jalan kalau push ke main (bukan workflow_run lain), dan hanya ketika
+    # deployment_status success OR push biasa
+    if: >-
+      (github.event_name == 'push') ||
+      (github.event_name == 'deployment_status' && github.event.deployment_status.state == 'success') ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Alias latest production deployment to primary domain
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT: tokobarokah
+          VERCEL_ORG_ID: team_hJ6VglO8z8uenrwt79xXpM84
+          DOMAIN: tokobarokah.vercel.app
+        run: |
+          set -e
+          echo "Fetching latest READY production deployment of project $VERCEL_PROJECT..."
+          DEPLOY_URL=$(curl -s \
+            -H "Authorization: Bearer ***" \
+            "https://api.vercel.com/v6/deployments?limit=1&projectId=prj_1NuZKLcAAM9esXjIm3BSUmWoyUDT&teamId=$VERCEL_ORG_ID&state=READY&target=production" \
+            | python3 -c "import json,sys;print(json.load(sys.stdin)['deployments'][0]['uid'])")
+          echo "Latest deployment: $DEPLOY_URL"
+          echo "Aliasing $DOMAIN -> $DEPLOY_URL"
+          curl -s -X POST \
+            -H "Authorization: Bearer ***" \
+            -H "Content-Type: application/json" \
+            -d "{\"alias\":\"$DOMAIN\"}" \
+            "https://api.vercel.com/v2/deployments/$DEPLOY_URL/aliases" \
+            | tee /tmp/alias_resp.json
+          # verifikasi: domain harus memuat string khas dari konten terbaru
+          sleep 10
+          if curl -s "https://$DOMAIN/landing.html" | grep -q "RJTFDdToXpEwbFUg9"; then
+            echo "✅ $DOMAIN now serves latest content"
+          else
+            echo "⚠️ Verification grep failed — content may not be updated yet (CDN cache)."
+            exit 1
+          fi
