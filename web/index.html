@@ -93,13 +93,13 @@
     <div class="flex h-screen overflow-hidden relative">
         <aside id="sidebar" class="w-64 bg-white border-r border-slate-200 flex-col fixed md:relative z-30 h-full transition-transform transform -translate-x-full md:translate-x-0 flex shadow-sm">
             <div class="p-6 flex items-center justify-between border-b border-slate-100">
-                <div class="flex items-center space-x-3">
-                    <div class="bg-blue-600 text-white p-2.5 rounded-xl shadow-md shadow-blue-200"><i class="fa-solid fa-store text-lg"></i></div>
+                <a href="/" onclick="goLanding(event)" class="flex items-center space-x-3 cursor-pointer active:scale-[0.98] transition" title="Buka Toko Barokah">
+                    <img src="/img/logo-192.png" alt="Logo Toko Barokah" class="w-10 h-10 rounded-xl object-cover shadow-md">
                     <div>
                         <span class="font-bold text-lg text-slate-900 block leading-tight">KelontongPOS</span>
-                        <span class="text-xs text-slate-400 font-medium">Enterprise Edition</span>
+                        <span class="text-xs text-slate-400 font-medium">Toko Barokah</span>
                     </div>
-                </div>
+                </a>
             </div>
             
             <nav class="flex-1 p-4 space-y-1.5 overflow-y-auto">
@@ -424,6 +424,13 @@
             if (!confirm('Keluar dari POS? Sesi login akan dihapus.')) return;
             localStorage.removeItem('kpos_landing_auth');
             window.location.replace('/');
+        }
+        // Klik logo di sidebar -> buka landing (APK via bridge native, web langsung)
+        function goLanding(e) {
+            e.preventDefault();
+            var url = window.location.origin + '/';
+            if (window.AndroidBridge && AndroidBridge.openUrl) AndroidBridge.openUrl(url);
+            else window.location.href = url;
         }
 (function gatePOS() {
             var isAPK = /Android/i.test(navigator.userAgent) && window.AndroidBridge;
