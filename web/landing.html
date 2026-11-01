@@ -58,14 +58,14 @@ button:active { transform: scale(0.97); }
 @media (prefers-reduced-motion: reduce) { .bento:hover { transform:none; } }
 </style>
 </head>
-<body class="text-slate-100 overflow-x-hidden">
+<body id="top" class="text-slate-100 overflow-x-hidden">
 
 <!-- NAVBAR -->
 <nav class="relative z-20 flex items-center justify-between max-w-6xl mx-auto px-5 py-5">
-  <div class="flex items-center gap-2.5 font-extrabold text-lg">
+  <a href="#top" class="flex items-center gap-2.5 font-extrabold text-lg cursor-pointer active:scale-95 transition" title="Ke atas">
     <img src="/img/logo-192.png" alt="Logo Toko Barokah" class="w-10 h-10 rounded-xl object-cover shadow-lg">
     Toko Barokah <span class="text-emerald-400">Online</span>
-  </div>
+  </a>
   <div id="nav-guest" class="flex items-center gap-2">
     <a href="/shop" class="bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-bold text-sm px-5 min-h-[44px] rounded-xl shadow-lg shadow-emerald-500/30 inline-flex items-center">
       <i class="fa-solid fa-cart-shopping mr-1.5"></i>Belanja Online
