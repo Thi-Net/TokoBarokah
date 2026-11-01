@@ -1605,6 +1605,18 @@
         }
 
         document.addEventListener("DOMContentLoaded", () => {
+            // Guard pengelola sandi: kolom search pertama dianggap kolom email oleh
+            // password manager (popup sandi mengisi input teks pertama). Kolom dibuat
+            // readonly sampai disentuh — manager tidak bisa mengisi readonly.
+            ['sale-search', 'pur-search', 'op-search'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (!el) return;
+                el.setAttribute('readonly', 'readonly');
+                function unlock() { el.removeAttribute('readonly'); }
+                el.addEventListener('pointerdown', unlock);
+                el.addEventListener('focus', unlock);
+                el.addEventListener('touchstart', unlock, { passive: true });
+            });
             // Guard autofill browser/WebView: kolom pencarian pertama bisa terisi
             // email/username oleh autofill (gejala: katalog kosong tanpa error)
             ['sale-search', 'pur-search', 'op-search'].forEach(function(id) {
