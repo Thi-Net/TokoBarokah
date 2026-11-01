@@ -162,7 +162,7 @@
                             <div class="relative">
                                 <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Cari Produk</label>
                                 <div class="flex gap-2">
-                                    <input type="text" id="sale-search" placeholder="Ketik nama / barcode..." oninput="filterUniversalProducts(this.value, 'sale')" autocomplete="off" class="w-full border rounded-xl px-4 py-2.5 text-sm bg-slate-50">
+                                    <input type="text" id="sale-search" name="cari-produk-jual" placeholder="Ketik nama / barcode..." oninput="filterUniversalProducts(this.value, 'sale')" autocomplete="off" class="w-full border rounded-xl px-4 py-2.5 text-sm bg-slate-50">
                                     <button type="button" onclick="openScanner('sale')" class="shrink-0 bg-blue-600 hover:bg-blue-700 text-white px-3 rounded-xl transition"><i class="fa-solid fa-barcode text-lg"></i></button>
                                 </div>
                                 <div id="sale-dropdown" class="absolute left-0 right-0 bg-white border rounded-xl shadow-lg mt-1 max-h-48 overflow-y-auto z-30 hidden"></div><input type="hidden" id="sale-product-id">
@@ -245,7 +245,7 @@
                           <div class="grid grid-cols-2 gap-4"><div><input type="text" id="pur-supplier" placeholder="Supplier" class="w-full border rounded-xl px-4 py-2.5 text-sm bg-slate-50" required></div><div><input type="text" id="pur-invoice" placeholder="No Invoice" class="w-full border rounded-xl px-4 py-2.5 text-sm bg-slate-50" required></div></div>
                           <div class="relative">
                             <div class="flex gap-2">
-                              <input type="text" id="pur-search" placeholder="Cari Produk..." oninput="filterUniversalProducts(this.value, 'pur')" class="w-full border rounded-xl px-4 py-2.5 text-sm bg-slate-50" required>
+                              <input type="text" id="pur-search" name="cari-produk-beli" placeholder="Cari Produk..." oninput="filterUniversalProducts(this.value, 'pur')" autocomplete="off" class="w-full border rounded-xl px-4 py-2.5 text-sm bg-slate-50" required>
                               <button type="button" onclick="openScanner('pur')" class="shrink-0 bg-blue-600 hover:bg-blue-700 text-white px-3 rounded-xl transition"><i class="fa-solid fa-barcode text-lg"></i></button>
                             </div>
                             <div id="pur-dropdown" class="absolute left-0 right-0 bg-white border shadow-lg mt-1 hidden z-30"></div><input type="hidden" id="pur-product-id">
@@ -268,7 +268,7 @@
                         <form onsubmit="handleOpnameSubmit(event)" class="space-y-4">
                           <div class="relative">
                             <div class="flex gap-2">
-                              <input type="text" id="op-search" placeholder="Cari Produk..." oninput="filterUniversalProducts(this.value, 'op')" class="w-full border rounded-xl px-4 py-2.5 text-sm bg-slate-50" required>
+                              <input type="text" id="op-search" name="cari-produk-opname" placeholder="Cari Produk..." oninput="filterUniversalProducts(this.value, 'op')" autocomplete="off" class="w-full border rounded-xl px-4 py-2.5 text-sm bg-slate-50" required>
                               <button type="button" onclick="openScanner('op')" class="shrink-0 bg-blue-600 hover:bg-blue-700 text-white px-3 rounded-xl transition"><i class="fa-solid fa-barcode text-lg"></i></button>
                             </div>
                             <div id="op-dropdown" class="absolute left-0 right-0 bg-white border shadow-lg mt-1 hidden z-30"></div><input type="hidden" id="op-product-id">
@@ -1605,6 +1605,22 @@
         }
 
         document.addEventListener("DOMContentLoaded", () => {
+            // Guard autofill browser/WebView: kolom pencarian pertama bisa terisi
+            // email/username oleh autofill (gejala: katalog kosong tanpa error)
+            ['sale-search', 'pur-search', 'op-search'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el && el.value) { el.value = ''; }
+            });
+            window.addEventListener('pageshow', function(ev) {
+                if (ev.persisted) {
+                    ['sale-search', 'pur-search', 'op-search'].forEach(function(id) {
+                        var el = document.getElementById(id);
+                        if (el && el.value) { el.value = ''; }
+                        var dd = document.getElementById((id.split('-')[0]) + '-dropdown');
+                        if (dd) dd.classList.add('hidden');
+                    });
+                }
+            });
             // Auto-reconnect diam-diam bila URL+key tersimpan
             const su = localStorage.getItem('kpos_sb_url'), sk = localStorage.getItem('kpos_sb_key');
             if (su && sk) {
